@@ -12,6 +12,9 @@ const errorHandling = require("./middleware/errorHandling");
 // Authentication routes
 const auth = require("./auth/auth.route");
 
+// users routes
+const users = require("./users/users.route");
+
 // MongoDB Connection
 connectDB();
 
@@ -22,6 +25,7 @@ app.use(logger);
 
 // Routes
 app.use("/auth", limitAccess, auth);
+app.use("/users", limitAccess, users);
 
 // Error Handling Middleware
 app.use(errorHandling);

@@ -14,7 +14,7 @@ const generateRefreshToken = (user) => {
 
 const generateAccessToken = (user) => {
   const token = jwt.sign(
-    { username: user.username, role: user.role },
+    { _id: user._id, username: user.username, role: user.role },
     accessTokenSecret,
     { expiresIn: "15m" }
   );
@@ -70,7 +70,9 @@ const login = async (req, res) => {
   if (!user) return res.sendStatus(404);
 
   const validatePassword = await bcrypt.compare(password, user.password);
-  if (!validatePassword) return res.sendStatus(404);
+  if (!validatePassword) return res.sendStatus(400); // Bad Request
+
+  const role = user.role;
 
   const refreshToken = generateRefreshToken(user);
 
