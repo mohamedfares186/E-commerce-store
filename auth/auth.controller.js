@@ -22,22 +22,33 @@ const generateAccessToken = (user) => {
 };
 
 const register = async (req, res) => {
-  const { firstName, lastName, email, username, password, dateOfBirth, role } =
-    req.body;
+  const {
+    firstName,
+    lastName,
+    email,
+    username,
+    password,
+    reEnterPassword,
+    dateOfBirth,
+    role,
+  } = req.body;
   if (
     !firstName ||
     !lastName ||
     !email ||
     !username ||
     !password ||
+    !reEnterPassword ||
     !dateOfBirth
   )
     return res.sendStatus(400); // bad request
 
+  if (password !== reEnterPassword) return res.sendStatus(400);
+
   const existingUser = await User.findOne({ username });
   if (existingUser) return res.sendStatus(409); // conflict
 
-  const passwordHash = await bcrypt.hash(password, 10);
+  const passwordHash = await bcrypt.hash(reEnterPassword, 10);
   const newUser = new User({
     firstName: firstName,
     lastName: lastName,
@@ -87,7 +98,7 @@ const login = async (req, res) => {
 
 const refresh = async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.jwt) return res.sendStatus(401); // Not Authorized
+  if (!cookies?.refreshToken) return res.sendStatus(401); // Not Authorized
 
   const token = cookies.refreshToken;
 

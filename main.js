@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 const connectDB = require("./config/db");
 const limitAccess = require("./middleware/rateLimit");
 const logger = require("./middleware/logger");
-const errorHandling = require("./middleware/errorHandler");
+const errorHandling = require("./middleware/errorHandling");
 
 // Authentication routes
 const auth = require("./auth/auth.route");
