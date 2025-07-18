@@ -7,7 +7,8 @@ const authorized = (...allowedRoles) => {
     jwt.verify(token, accessTokenSecret, (err, decoded) => {
       if (err) return res.sendStatus(401); // Unauthorized
       const role = decoded.role;
-      if (!allowedRoles.includes(role)) return res.sendStatus(403); // Forbidden
+      if (!allowedRoles.includes(role))
+        return res.status(403).json({ Error: "Access Denied" }); // Forbidden
 
       req.user = decoded;
       next();
