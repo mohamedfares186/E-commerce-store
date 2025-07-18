@@ -41,12 +41,18 @@ const register = async (req, res) => {
     !reEnterPassword ||
     !dateOfBirth
   )
-    return res.sendStatus(400); // bad request
+    return res.status(400).json({ Error: "Please enter valid data" }); // bad request
+
+  if (password.length < 8)
+    return res
+      .status(400)
+      .json({ message: "password can not be less than 8 characters" });
 
   if (password !== reEnterPassword) return res.sendStatus(400);
 
   const existingUser = await User.findOne({ username });
-  if (existingUser) return res.sendStatus(409); // conflict
+  if (existingUser)
+    return res.status(409).json({ Error: "Invalid Credentials" }); // conflict
 
   const passwordHash = await bcrypt.hash(reEnterPassword, 10);
   const newUser = new User({
@@ -64,13 +70,17 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   const { username, password } = req.body;
-  if (!username || !password) return res.sendStatus(400); // Bad Request
+  if (!username || !password)
+    return res
+      .status(400)
+      .json({ Error: "Please enter username and password" }); // Bad Request
 
   const user = await User.findOne({ username });
-  if (!user) return res.sendStatus(404);
+  if (!user) return res.status(404).json({ Error: "User Not Found" });
 
   const validatePassword = await bcrypt.compare(password, user.password);
-  if (!validatePassword) return res.sendStatus(400); // Bad Request
+  if (!validatePassword)
+    return res.status(400).json({ Error: "Invalid Credentials" }); // Bad Request
 
   const role = user.role;
 
@@ -100,12 +110,13 @@ const login = async (req, res) => {
 
 const refresh = async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.refreshToken) return res.sendStatus(401); // Not Authorized
+  if (!cookies?.refreshToken)
+    return res.status(403).json({ Error: "Invalid Credentials" }); // Forbidden
 
   const token = cookies.refreshToken;
 
   const retrieveToken = await User.findOne({ token });
-  if (!retrieveToken) return res.sendStatus(404); // Forbidden
+  if (!retrieveToken) return res.status(404).json({ Error: "User Not Found" }); // Not Found
 
   jwt.verify(token, refreshTokenSecret, (err, decoded) => {
     if (err) return res.sendStatus(401); // Not Authorized
@@ -122,7 +133,8 @@ const refresh = async (req, res) => {
 
 const logout = async (req, res) => {
   const cookies = req.cookies;
-  if (!cookies?.refreshToken) return res.sendStatus(401); // Not Authorized
+  if (!cookies?.refreshToken)
+    return res.status(403).json({ Error: "Invalid Credentials" }); // Forbidden
 
   const token = cookies.refreshToken;
   await User.updateOne({ token }, { $set: { token: "" } });

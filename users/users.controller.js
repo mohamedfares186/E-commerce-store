@@ -15,15 +15,20 @@ const findOneUser = async (req, res) => {
 const updateUserPassword = async (req, res) => {
   const id = req.params.id;
   const { userOldPassword, newPassword, repeatedPassword } = req.body;
-  const user = await User.findOne({ _id: id });
+  if (userOldPassword === newPassword)
+    return res
+      .status(400)
+      .json({ Error: "New password can not equal the old password" }); // can not use your old password
 
-  if (!user) return res.sendStatus(404); // Not Found
+  const user = await User.findOne({ _id: id });
+  if (!user) return res.status(404).json({ Error: "User Not Found" }); // Not Found
 
   const match = await bcrypt.compare(userOldPassword, user.password);
 
-  if (!match) return res.sendStatus(400); // Bad Request
+  if (!match) return res.status(400).json({ Error: "Wrong Password" }); // Bad Request
 
-  if (newPassword !== repeatedPassword) return res.sendStatus(400); // Bad Request
+  if (newPassword !== repeatedPassword)
+    return res.status(400).json({ Error: "Please enter the correct password" }); // Bad Request
 
   const newPasswordHash = await bcrypt.hash(repeatedPassword, 10);
 
@@ -36,10 +41,11 @@ const deleteUser = async (req, res) => {
   const { id } = req.params.id;
   const { username } = req.body;
 
-  if (!username) return res.sendStatus(400); // Bad Request
+  if (!username)
+    return res.status(400).json({ Error: "Please enter a valid username" }); // Bad Request
 
   const user = await User.findOne({ username: username } || { _id: id });
-  if (!user) return res.sendStatus(404); // Not Found
+  if (!user) return res.status(404).json({ Error: "User Not Found" }); // Not Found
 
   await User.deleteOne({ username: username } || { _id: id }).exec();
   res.sendStatus(204); // No Content

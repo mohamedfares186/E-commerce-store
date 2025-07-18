@@ -5,7 +5,7 @@ const port = process.env.PORT || 3000;
 const cookieParser = require("cookie-parser");
 const mongoose = require("mongoose");
 const connectDB = require("./config/db");
-const limitAccess = require("./middleware/rateLimit");
+const accessControl = require("./middleware/rateLimit");
 const logger = require("./middleware/logger");
 const errorHandling = require("./middleware/errorHandling");
 
@@ -24,8 +24,8 @@ app.use(express.json());
 app.use(logger);
 
 // Routes
-app.use("/auth", limitAccess, auth);
-app.use("/users", limitAccess, users);
+app.use("/auth", accessControl, auth);
+app.use("/users", accessControl, users);
 
 // Error Handling Middleware
 app.use(errorHandling);
