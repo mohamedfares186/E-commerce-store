@@ -1,22 +1,23 @@
 const express = require("express");
 const router = express.Router();
-const categoriesController = require("./categories.controller");
+const productController = require("./products.controller");
 const authorize = require("../middleware/authorization");
 const accessControl = require("../middleware/accessControl");
 
-router.get("/", categoriesController.retrieveAllCategories);
-router.get("/:slug", categoriesController.retrieveOneCategories);
+router.get("/", productController.retrieveAllProducts);
+router.get("/search", productController.retrieveProductsByCategory);
+router.get("/:id", productController.retrieveProductById);
 router.post(
-  "/create-category",
+  "/create-product",
   authorize("admin", "moderator"),
   accessControl.adminOrModeratorAccess,
-  categoriesController.createCategory
+  productController.createProduct
 );
 router.delete(
-  "/delete-category",
+  "/delete-product",
   authorize("admin", "moderator"),
   accessControl.adminOrModeratorAccess,
-  categoriesController.deleteCategory
+  productController.deleteProduct
 );
 
 module.exports = router;
