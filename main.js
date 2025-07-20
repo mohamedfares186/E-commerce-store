@@ -21,6 +21,9 @@ const categories = require("./categories/categories.route");
 // products routes
 const products = require("./products/products.route");
 
+// Cart Routes
+const cart = require("./cart/cart.route");
+
 // MongoDB Connection
 connectDB();
 
@@ -34,6 +37,7 @@ app.use("/auth", rateLimit, auth);
 app.use("/users", rateLimit, users);
 app.use("/categories", rateLimit, categories);
 app.use("/products", rateLimit, products);
+app.use("/cart", rateLimit, cart);
 
 // Error Handling Middleware
 app.use(errorHandling);

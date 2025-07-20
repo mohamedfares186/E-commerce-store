@@ -9,6 +9,7 @@ const adminAccess = (req, res, next) => {
     res.status(403).json({ Error: "Only admin can access this page" }); // Forbidden
   } catch (error) {
     res.sendStatus(500);
+    console.error(error);
   }
 };
 
@@ -23,21 +24,20 @@ const moderatorAccess = (req, res, next) => {
     res.status(403).json({ Error: "Only moderators can perform this task" }); // Forbidden
   } catch (error) {
     res.sendStatus(500);
+    console.error(error);
   }
 };
 
 const userAccess = (req, res, next) => {
   try {
-    if (!req.user) return res.sendStatus(401); //Unauthorized
-    if (!req.params.id) return res.sendStatus(400); // Bad Request
+    if (!req.user) return res.sendStatus(401); // Unauthorized
 
-    const isSelf = req.user._id?.toString() === req.params.id?.toString();
+    if (req.user.role === "user") return next();
 
-    if (isSelf) return next();
-
-    res.sendStatus(403); // Forbidden
+    res.status(403).json({ Error: "Only users can perform this task" }); // Forbidden
   } catch (error) {
     res.sendStatus(500);
+    console.error(error);
   }
 };
 
@@ -55,6 +55,7 @@ const adminOrModeratorAccess = (req, res, next) => {
       .json({ Error: "Only admin or moderator can perform this task" }); // Forbidden
   } catch (error) {
     res.sendStatus(500);
+    console.error(error);
   }
 };
 
@@ -64,13 +65,34 @@ const adminOrUserAccess = (req, res, next) => {
     if (!req.params.id) return res.sendStatus(400); // Bad Request
 
     const isAdmin = req.user.role === "admin";
-    const isUser = req.user._id?.toString() === req.params.id?.toString();
+    const isUser = req.user.role === "user";
+    // const isUser = req.user._id?.toString() === req.params.id?.toString();
 
     if (isAdmin || isUser) return next();
 
     res.status(403).json({ Error: "Access Denied" });
   } catch (error) {
     res.sendStatus(500);
+    console.error(error);
+  }
+};
+
+const adminOrModeratorOrUserAccess = (req, res, next) => {
+  try {
+    if (!req.user) return res.sendStatus(401); // Unauthorized
+    if (!req.params.id) return res.sendStatus(400); // Bad Request
+
+    const isAdmin = req.user.role === "admin";
+    const isModerator = req.user.role === "moderator";
+    const isUser = req.user.role === "user";
+    // const isUser = req.user._id?.toString() === req.params.id?.toString();
+
+    if (isAdmin || isModerator || isUser) return next();
+
+    res.status(403).json({ Error: "Access Denied" });
+  } catch (error) {
+    res.sendStatus(500);
+    console.error(error);
   }
 };
 
@@ -80,4 +102,5 @@ module.exports = {
   userAccess,
   adminOrModeratorAccess,
   adminOrUserAccess,
+  adminOrModeratorOrUserAccess,
 };

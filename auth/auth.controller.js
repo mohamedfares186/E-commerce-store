@@ -153,8 +153,14 @@ const logout = async (req, res) => {
     const token = cookies.refreshToken;
     await User.updateOne({ token }, { $set: { token: "" } });
 
-    const refreshToken = cookies.refreshToken;
     const deleteToken = await User.deleteOne({ token });
+    if (!deleteToken) return res.status(404).json({ Error: "User Not Found" }); // Not Found
+
+    res.clearCookie("accessToken", {
+      httpOnly: true,
+      secure: false, // Change to true in production
+      sameSite: "strict",
+    });
 
     res.clearCookie("refreshToken", {
       httpOnly: true,

@@ -16,6 +16,7 @@ const authorized = (...allowedRoles) => {
       });
     } catch (error) {
       res.sendStatus(500);
+      console.error(error);
     }
   };
 };
