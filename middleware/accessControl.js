@@ -62,11 +62,9 @@ const adminOrModeratorAccess = (req, res, next) => {
 const adminOrUserAccess = (req, res, next) => {
   try {
     if (!req.user) return res.sendStatus(401); // Unauthorized
-    if (!req.params.id) return res.sendStatus(400); // Bad Request
 
     const isAdmin = req.user.role === "admin";
     const isUser = req.user.role === "user";
-    // const isUser = req.user._id?.toString() === req.params.id?.toString();
 
     if (isAdmin || isUser) return next();
 
@@ -80,12 +78,10 @@ const adminOrUserAccess = (req, res, next) => {
 const adminOrModeratorOrUserAccess = (req, res, next) => {
   try {
     if (!req.user) return res.sendStatus(401); // Unauthorized
-    if (!req.params.id) return res.sendStatus(400); // Bad Request
 
     const isAdmin = req.user.role === "admin";
     const isModerator = req.user.role === "moderator";
     const isUser = req.user.role === "user";
-    // const isUser = req.user._id?.toString() === req.params.id?.toString();
 
     if (isAdmin || isModerator || isUser) return next();
 

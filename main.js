@@ -12,17 +12,20 @@ const errorHandling = require("./middleware/errorHandling");
 // Authentication routes
 const auth = require("./auth/auth.route");
 
-// users routes
+// Users routes
 const users = require("./users/users.route");
 
-// categories routes
+// Categories routes
 const categories = require("./categories/categories.route");
 
-// products routes
+// Products routes
 const products = require("./products/products.route");
 
 // Cart Routes
 const cart = require("./cart/cart.route");
+
+// Orders Routes
+const orders = require("./orders/orders.route");
 
 // MongoDB Connection
 connectDB();
@@ -38,6 +41,7 @@ app.use("/users", rateLimit, users);
 app.use("/categories", rateLimit, categories);
 app.use("/products", rateLimit, products);
 app.use("/cart", rateLimit, cart);
+app.use("/orders", rateLimit, orders);
 
 // Error Handling Middleware
 app.use(errorHandling);
