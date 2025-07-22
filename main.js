@@ -36,12 +36,12 @@ app.use(express.json());
 app.use(logger);
 
 // Routes
-app.use("/auth", rateLimit, auth);
-app.use("/users", rateLimit, users);
-app.use("/categories", rateLimit, categories);
-app.use("/products", rateLimit, products);
-app.use("/cart", rateLimit, cart);
-app.use("/orders", rateLimit, orders);
+app.use("/api/auth", rateLimit, auth);
+app.use("/api/users", rateLimit, users);
+app.use("/api/categories", rateLimit, categories);
+app.use("/api/products", rateLimit, products);
+app.use("/api/cart", rateLimit, cart);
+app.use("/api/orders", rateLimit, orders);
 
 // Error Handling Middleware
 app.use(errorHandling);

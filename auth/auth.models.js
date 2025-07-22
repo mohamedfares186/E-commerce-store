@@ -26,6 +26,16 @@ const usersSchema = new mongoose.Schema({
     type: Date,
     required: true,
   },
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerifiedToken: {
+    type: String,
+  },
+  emailVerifyExpires: {
+    type: Date,
+  },
   token: {
     type: String,
     required: false,
@@ -35,6 +45,12 @@ const usersSchema = new mongoose.Schema({
     required: true,
     enum: ["admin", "moderator", "user"],
     default: "user",
+  },
+  resetPasswordToken: {
+    type: String,
+  },
+  resetPasswordExpires: {
+    type: Date,
   },
 });
 
