@@ -1,23 +1,51 @@
-const express = require("express");
-const router = express.Router();
-const productController = require("./products.controller");
-const authorize = require("../middleware/authorization");
-const accessControl = require("../middleware/accessControl");
+import express from "express";
+import { 
+  retrieveAllProducts, 
+  retrieveProductsByCategory, 
+  retrieveProductById, 
+  createProduct, 
+  deleteProduct, 
+  updateProduct,
+  getProductStats
+} from "./products.controller.js";
+import authenticate from "../middleware/authenticate.js";
+import authorize from "../middleware/authorize.js";
+import { U2000, U9550 } from "../config/roles.js";
 
-router.get("/", productController.retrieveAllProducts);
-router.get("/search", productController.retrieveProductsByCategory);
-router.get("/:id", productController.retrieveProductById);
+const router = express.Router();
+
+// User and Guest routes
+router.get("/", retrieveAllProducts);
+router.get("/search", retrieveProductsByCategory);
+router.get("/:productId", retrieveProductById);
+
+
+// Admin routes
+router.get(
+  "/admin/stats",
+  authenticate,
+  authorize(U2000, U9550),
+  getProductStats
+);
+
 router.post(
   "/create-product",
-  authorize("admin", "moderator"),
-  accessControl.adminOrModeratorAccess,
-  productController.createProduct
+  authenticate,
+  authorize(U2000, U9550),
+  createProduct
 );
 router.delete(
   "/delete-product",
-  authorize("admin", "moderator"),
-  accessControl.adminOrModeratorAccess,
-  productController.deleteProduct
+  authenticate,
+  authorize(U2000, U9550),
+  deleteProduct
 );
 
-module.exports = router;
+router.put(
+  "/update-product/:productId",
+  authenticate,
+  authorize(U2000, U9550),
+  updateProduct
+);
+
+export default router;

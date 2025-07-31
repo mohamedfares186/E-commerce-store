@@ -1,22 +1,55 @@
-const express = require("express");
+import express from "express";
+import { 
+  findAllUsers, 
+  findUserById, 
+  findUserByIdAdmin,
+  updateUserPassword, 
+  deleteUser 
+} from "./users.controller.js";
+import authenticate from "../middleware/authenticate.js";
+import authorize from "../middleware/authorize.js";
+import { selfAccess } from "../middleware/accessControl.js";
+import { U2000, U1234 } from "../config/roles.js";
+
 const router = express.Router();
-const usersController = require("./users.controller");
-const authorize = require("../middleware/authorization");
-const accessControl = require("../middleware/accessControl");
 
-router.get("/", authorize("admin"), usersController.findAllUsers);
+
+// Admin Access
 router.get(
-  "/:id",
-  authorize("admin", "user"),
-  accessControl.adminOrUserAccess,
-  usersController.findOneUser
+  "/admin/users", 
+  authenticate, 
+  authorize(U2000), 
+  findAllUsers
 );
-router.put(
-  "/:id",
-  authorize("admin", "user"),
-  accessControl.adminOrUserAccess,
-  usersController.updateUserPassword
-);
-router.delete("/:id", authorize("admin"), usersController.deleteUser);
 
-module.exports = router;
+router.get(
+  "/admin/:username",
+  authenticate,
+  authorize(U2000),
+  findUserByIdAdmin
+);
+
+router.delete(
+  "/admin/:username",
+ authenticate, 
+ authorize(U2000), 
+ deleteUser
+);
+
+// User Access
+router.get(
+  "/:userId",
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  findUserById
+);
+
+router.put(
+  "/:userId",
+  authenticate,
+  authorize(U1234),
+  updateUserPassword
+);
+
+export default router;

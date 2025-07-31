@@ -1,6 +1,8 @@
 const errorHandling = (err, req, res, next) => {
-  const { status } = err;
-  console.error(`${status} / ${err}`);
+  const { statusCode, message, stack } = err;
+
+  res.sendStatus(500);
+  console.error(`${statusCode} / ${message} \n ${stack}`);
 };
 
-module.exports = errorHandling;
+export default errorHandling;

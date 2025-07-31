@@ -8,4 +8,4 @@ const slugify = (text) => {
     .replace(/\-\-+/g, "-");
 };
 
-module.exports = slugify;
+export default slugify;

@@ -1,48 +1,89 @@
-const Cart = require("./cart.model");
-const Product = require("../products/products.model");
+import Cart from "./cart.model.js";
+import Product from "../products/products.model.js";
+import generateId from "../utils/generateId.js";
 
+
+// Admin Access
 const getAllCarts = async (req, res) => {
   try {
     const carts = await Cart.find()
       .populate("user", "username email")
-      .populate("items.productId", "name price image");
-    res.status(200).json({
+      .populate("items.productId", "title price imagePath")
+      .sort({ createdAt: -1 });
+    
+    return res.status(200).json({
       success: true,
       data: carts,
       count: carts.length,
     });
   } catch (error) {
-    console.error("Get all carts error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
-const getCartByUserId = async (req, res) => {
+const getCartByUserIdAdmin = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ message: "User ID is required" });
+    const { userId } = req.query;
+    if (!userId) return res.status(400).json({ Error: "User ID is required" });
 
-    const findUserCart = await Cart.findOne({ user: id })
-      .populate("items.productId", "name price image description stock")
+    const findUserCart = await Cart.findOne({ user: userId })
+      .populate("items.productId", "title price imagePath description stock")
       .populate("user", "username email");
 
     if (!findUserCart) {
       return res.status(404).json({ message: "Cart not found for this user" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: findUserCart,
     });
   } catch (error) {
-    console.error("Get cart by user ID error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
+  }
+}
+
+
+// User Access
+const getCartByUserId = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    if (!userId) return res.status(403).json({ Error: "Access Denied" });
+
+    const findUserCart = await Cart.findOne({ user: userId })
+      .populate({
+        path: "items.productId",
+        select: "title price imagePath stock",
+        model: "Product",
+        foreignField: "productId"
+      })
+      .populate({
+        path: "user",
+        select: "username email", // Fields from the User model
+        model: "User",
+        foreignField: "userId" // <--- Tell populate to match against this field in the User model
+    });
+
+    if (!findUserCart) {
+      return res.status(404).json({ message: "Cart not found for this user" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: findUserCart,
+    });
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const createCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
+
     const { productId, quantity } = req.body;
 
     // Input validation
@@ -65,7 +106,7 @@ const createCart = async (req, res) => {
     }
 
     // Check if product exists and is available
-    const product = await Product.findById(productId);
+    const product = await Product.findOne({ productId: productId });
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -81,8 +122,11 @@ const createCart = async (req, res) => {
 
     let cart = await Cart.findOne({ user: userId });
 
+    const cartId = generateId();
+
     if (!cart) {
       cart = new Cart({
+        cartId: cartId,
         user: userId,
         items: [{ productId, quantity, price, total }],
         totalQuantity: quantity,
@@ -116,9 +160,14 @@ const createCart = async (req, res) => {
     }
 
     await cart.save();
-    await cart.populate("items.productId", "name price image stock");
+    await cart.populate({
+      path: "items.productId",
+      select: "title price imagePath stock",
+      model: "Product",
+      foreignField: "productId"
+    });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message:
         cart.items.length === 1
@@ -127,14 +176,14 @@ const createCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error("Cart creation error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const deleteCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
 
     const cart = await Cart.findOneAndDelete({ user: userId });
 
@@ -142,19 +191,19 @@ const deleteCart = async (req, res) => {
       return res.status(404).json({ message: "Cart not found" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Cart deleted successfully",
     });
   } catch (error) {
-    console.error("Delete cart error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const addItemToCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
     const { productId, quantity } = req.body;
 
     if (!productId || !quantity) {
@@ -169,7 +218,7 @@ const addItemToCart = async (req, res) => {
       });
     }
 
-    const product = await Product.findById(productId);
+    const product = await Product.findOne({ productId: productId });
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -215,27 +264,28 @@ const addItemToCart = async (req, res) => {
     cart.totalAmount = cart.items.reduce((sum, item) => sum + item.total, 0);
 
     await cart.save();
-    await cart.populate("items.productId", "name price image stock");
+    await cart.populate({
+      path: "items.productId",
+      select: "title price imagePath stock",
+      model: "Product",
+      foreignField: "productId"
+    });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Item added to cart successfully",
       data: cart,
     });
   } catch (error) {
-    console.error("Add item to cart error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const removeItemFromCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
     const { productId } = req.params;
-
-    if (!productId) {
-      return res.status(400).json({ message: "Product ID is required" });
-    }
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
@@ -260,22 +310,22 @@ const removeItemFromCart = async (req, res) => {
     cart.totalAmount = cart.items.reduce((sum, item) => sum + item.total, 0);
 
     await cart.save();
-    await cart.populate("items.productId", "name price image stock");
+    await cart.populate("items.productId", "title price imagePath stock");
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Item removed from cart successfully",
       data: cart,
     });
   } catch (error) {
-    console.error("Remove item from cart error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const updateItemInCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
     const { productId } = req.params;
     const { quantity } = req.body;
 
@@ -297,7 +347,7 @@ const updateItemInCart = async (req, res) => {
       });
     }
 
-    const product = await Product.findById(productId);
+    const product = await Product.findOne({ productId: productId });
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -332,22 +382,27 @@ const updateItemInCart = async (req, res) => {
     cart.totalAmount = cart.items.reduce((sum, item) => sum + item.total, 0);
 
     await cart.save();
-    await cart.populate("items.productId", "name price image stock");
+    await cart.populate({
+      path: "items.productId",
+      select: "title price imagePath stock",
+      model: "Product",
+      foreignField: "productId"
+    });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Item quantity updated successfully",
       data: cart,
     });
   } catch (error) {
-    console.error("Update item in cart error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
 const clearCart = async (req, res) => {
   try {
-    const userId = req.user._id;
+    const { userId } = req.user;
 
     const cart = await Cart.findOne({ user: userId });
     if (!cart) {
@@ -360,19 +415,20 @@ const clearCart = async (req, res) => {
 
     await cart.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Cart cleared successfully",
       data: cart,
     });
   } catch (error) {
-    console.error("Clear cart error:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
-module.exports = {
+export {
   getAllCarts,
+  getCartByUserIdAdmin,
   getCartByUserId,
   createCart,
   deleteCart,

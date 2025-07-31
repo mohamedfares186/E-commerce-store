@@ -1,50 +1,73 @@
-const Product = require("./products.model");
+import Product from "./products.model.js";
+import generateId from "../utils/generateId.js";
 
+
+// User and guest Access
 const retrieveAllProducts = async (req, res) => {
   try {
-    const products = await Product.find();
-    if (!products) return res.status(404).json({ Error: "No products Found" });
+    const products = await Product.find().sort({ createdAt: -1 });
+    if (!products || products.length === 0) {
+      return res.status(404).json({ Error: "No products found" });
+    }
 
-    res.status(200).json({ products });
+    return res.status(200).json({
+      success: true,
+      data: products,
+      count: products.length
+    });
   } catch (error) {
-    res.sendStatus(500);
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
+
 const retrieveProductsByCategory = async (req, res) => {
   try {
     const category = req.query.category;
-    if (!category)
-      return res.status(400).json({ Error: "product category is required" });
+    if (!category) {
+      return res.status(400).json({ Error: "Product category is required" });
+    }
 
-    const findProducts = await Product.find({ category: category });
-    if (!findProducts || findProducts.length === 0)
-      return res.status(404).json({ Error: "Products not found" });
+    const findProducts = await Product.find({ category: category }).sort({ createdAt: -1 });
+    if (!findProducts || findProducts.length === 0) {
+      return res.status(404).json({ Error: "Products not found for this category" });
+    }
 
-    res.status(200).json(findProducts);
+    return res.status(200).json({
+      success: true,
+      data: findProducts,
+      count: findProducts.length
+    });
   } catch (error) {
-    res.sendStatus(500);
     console.error(error);
+    return res.sendStatus(500);
   }
 };
+
 const retrieveProductById = async (req, res) => {
   try {
-    const { id } = req.params;
-    if (!id) return res.status(400).json({ Error: "Product is required" });
+    const { productId } = req.params;
 
-    const findProduct = await Product.findOne({ _id: id });
-    if (!findProduct)
+    const findProduct = await Product.findOne({ productId: productId });
+    if (!findProduct) {
       return res.status(404).json({ Error: "Product not found" });
+    }
 
-    res.status(200).json(findProduct);
+    return res.status(200).json({
+      success: true,
+      data: findProduct
+    });
   } catch (error) {
-    res.sendStatus(500);
     console.error(error);
+    return res.sendStatus(500);
   }
 };
+
+
+// Admin Access
 const createProduct = async (req, res) => {
   try {
     const {
-      productCode,
       title,
       imagePath,
       description,
@@ -52,28 +75,39 @@ const createProduct = async (req, res) => {
       category,
       available,
       stock,
-      createdAt,
     } = req.body;
+    
     if (
-      !productCode ||
       !title ||
       !imagePath ||
       !description ||
       !price ||
       !category ||
-      !available ||
+      available === undefined ||
       !stock
-    )
+    ) {
       return res
         .status(400)
-        .json({ Error: "Please Enter the correct Information" });
+        .json({ Error: "Please enter all required information" });
+    }
 
-    const matchProduct = await Product.findOne({ productCode: productCode });
-    if (matchProduct)
-      return res.status(400).json({ Error: "Product already exists" });
+    if (price <= 0) {
+      return res.status(400).json({ Error: "Price must be greater than 0" });
+    }
+
+    if (stock < 0) {
+      return res.status(400).json({ Error: "Stock cannot be negative" });
+    }
+
+    const productId = generateId();
+
+    const findProduct = await Product.findOne({ productId: productId });
+    if (findProduct) {
+      return res.status(400).json({ Error: "Product ID already exists" });
+    }
 
     const newProduct = new Product({
-      productCode: productCode,
+      productId: productId,
       title: title,
       imagePath: imagePath,
       description: description,
@@ -81,38 +115,147 @@ const createProduct = async (req, res) => {
       category: category,
       available: available,
       stock: stock,
-      createdAt: createdAt,
     });
 
-    newProduct.save();
-    res.sendStatus(201);
+    await newProduct.save();
+    
+    return res.status(201).json({
+      success: true,
+      message: "Product has been created successfully",
+      data: newProduct
+    });
   } catch (error) {
-    res.sendStatus(500);
     console.error(error);
+    return res.sendStatus(500);
   }
 };
+
 const deleteProduct = async (req, res) => {
   try {
-    const { productCode } = req.body;
-    if (!productCode)
-      return res.status(400).json({ Error: "Product Code is required" });
+    const { productId } = req.body;
+    if (!productId) {
+      return res.status(400).json({ Error: "Product ID is required" });
+    }
 
-    const matchProduct = await Product.findOne({ productCode: productCode });
-    if (!matchProduct)
-      return res.status(404).json({ Error: "Product Not Found" });
+    const findProduct = await Product.findOne({ productId: productId });
+    if (!findProduct) {
+      return res.status(404).json({ Error: "Product not found" });
+    }
 
-    await Product.deleteOne({ productCode: productCode }).exec();
-    res.sendStatus(204);
+    await Product.deleteOne({ productId: productId }).exec();
+    
+    return res.status(200).json({
+      success: true,
+      message: "Product has been deleted successfully"
+    });
   } catch (error) {
-    res.sendStatus(500);
     console.error(error);
+    return res.sendStatus(500);
   }
 };
 
-module.exports = {
+const updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const {
+      title,
+      imagePath,
+      description,
+      price,
+      category,
+      available,
+      stock,
+    } = req.body;
+
+    if (!productId) {
+      return res.status(400).json({ Error: "Product ID is required" });
+    }
+
+    const findProduct = await Product.findOne({ productId: productId });
+    if (!findProduct) {
+      return res.status(404).json({ Error: "Product not found" });
+    }
+
+    // Update only provided fields
+    if (title !== undefined) findProduct.title = title;
+    if (imagePath !== undefined) findProduct.imagePath = imagePath;
+    if (description !== undefined) findProduct.description = description;
+    if (price !== undefined) {
+      if (price <= 0) {
+        return res.status(400).json({ Error: "Price must be greater than 0" });
+      }
+      findProduct.price = price;
+    }
+    if (category !== undefined) findProduct.category = category;
+    if (available !== undefined) findProduct.available = available;
+    if (stock !== undefined) {
+      if (stock < 0) {
+        return res.status(400).json({ Error: "Stock cannot be negative" });
+      }
+      findProduct.stock = stock;
+    }
+
+    await findProduct.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Product updated successfully",
+      data: findProduct
+    });
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
+};
+
+const getProductStats = async (req, res) => {
+  try {
+    const totalProducts = await Product.countDocuments();
+    const availableProducts = await Product.countDocuments({ available: true });
+    const outOfStockProducts = await Product.countDocuments({ stock: 0 });
+    const lowStockProducts = await Product.countDocuments({ stock: { $gt: 0, $lte: 10 } });
+
+    // Get products by category
+    const categoryStats = await Product.aggregate([
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 },
+          avgPrice: { $avg: "$price" }
+        }
+      }
+    ]);
+
+    // Get recent products (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentProducts = await Product.countDocuments({
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalProducts,
+        availableProducts,
+        outOfStockProducts,
+        lowStockProducts,
+        recentProducts,
+        categoryStats
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
+};
+
+export {
   retrieveAllProducts,
   retrieveProductsByCategory,
   retrieveProductById,
   createProduct,
   deleteProduct,
+  updateProduct,
+  getProductStats,
 };

@@ -1,7 +1,13 @@
-const mongoose = require("mongoose");
-const slugify = require("./slugUtility");
+import mongoose from "mongoose";
+import slugify from "../utils/generateSlug.js";
 
 const categorySchema = new mongoose.Schema({
+  categoryId: {
+    type: String,
+    required: true,
+    unique: true,
+    index: true,
+  },
   title: {
     type: String,
     required: true,
@@ -21,6 +27,6 @@ categorySchema.pre("save", function (next) {
   next();
 });
 
-const categories = mongoose.model("Category", categorySchema);
+const Category = mongoose.model("Category", categorySchema);
 
-module.exports = categories;
+export default Category;

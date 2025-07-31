@@ -1,107 +1,62 @@
-const Order = require("./orders.model");
-const Cart = require("../cart/cart.model");
-const Product = require("../products/products.model");
+import User from "../auth/auth.models.js";
+import Order from "./orders.model.js";
+import Cart from "../cart/cart.model.js";
+import Product from "../products/products.model.js";
+import generateId from "../utils/generateId.js";
 
+
+// Admin Access
 const getAllOrders = async (req, res) => {
   try {
-    const orders = await Order.find();
-    if (!orders) return res.status(404).json({ Error: "Orders Not Found" });
+    const orders = await Order.find()
+      .populate("user", "username email")
+      .sort({ createdAt: -1 });
+    
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ Error: "No orders found" });
+    }
 
-    res.status(200).json(orders);
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      count: orders.length
+    });
   } catch (error) {
-    res.sendStatus(500);
-    console.log(error);
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
-const getOrderByUser = async (req, res) => {
+const getOrderByUserIdAdmin = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { userId } = req.query;
     if (!userId) return res.status(400).json({ Error: "User ID is required" });
 
-    const order = await Order.findOne({ user: userId });
-    if (!order) return res.status(404).json({ Error: "Order is not found" });
+    const orders = await Order.find({ user: userId })
+      .populate("user", "username email")
+      .sort({ createdAt: -1 });
+    
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ Error: "No orders found for this user" });
+    }
 
-    res.status(200).json(order);
-  } catch (error) {
-    res.sendStatus(500);
-    console.log(error);
-  }
-};
-
-const createOrder = async (req, res) => {
-  try {
-    const { userId } = req.params;
-    const { address } = req.body;
-
-    if (req.user._id !== userId)
-      return res.status(401).json({ Error: "Unauthorized" });
-    if (!address)
-      return res
-        .status(400)
-        .json({ Message: "User Address is required to complete the order" });
-
-    const userCart = await Cart.findOne({ user: userId });
-    if (!userCart)
-      return res
-        .status(400)
-        .json({ Message: "You have no items in your cart" });
-
-    const cartItems = userCart.items;
-    if (cartItems.length === 0)
-      return res.status(400).json({ Message: "Your cart is empty" });
-
-    const productIds = cartItems.map((item) => item.productId);
-    const products = await Product.find({ _id: productIds });
-
-    if (products.length !== productIds.length)
-      return res.status(400).json({ Message: "Some products are not found" });
-    if (products.some((product) => product.stock <= 0))
-      return res
-        .status(400)
-        .json({ Message: "Some products are out of stock" });
-
-    const userOrder = new Order({
-      user: userId,
-      cart: {
-        items: cartItems.map((item) => {
-          return {
-            productId: item.productId,
-            quantity: item.quantity,
-            price: item.price,
-            total: item.total,
-          };
-        }),
-        totalQuantity: userCart.totalQuantity,
-        totalAmount: userCart.totalAmount,
-      },
-      address: address,
+    return res.status(200).json({
+      success: true,
+      data: orders,
+      count: orders.length
     });
-
-    await userOrder.save();
-    res.status(201).json(userOrder);
-
-    await products.forEach(async (product) => {
-      const productInCart = cartItems.find(
-        (item) => item.productId.toString() === product._id.toString()
-      );
-      if (productInCart) {
-        product.stock -= productInCart.quantity;
-        await product.save();
-      }
-    });
-
-    await Cart.findByIdAndDelete(userCart._id);
   } catch (error) {
-    res.status(500);
-    console.log(error);
+    console.error(error);
+    return res.sendStatus(500);
   }
-};
+}
 
 const updateOrder = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { username } = req.params;
     const { status } = req.body;
+    
+    if (!username) return res.status(400).json({ Error: "Username is required" });
     if (!status) return res.status(400).json({ Error: "Status is required" });
 
     const validStatuses = [
@@ -111,42 +66,111 @@ const updateOrder = async (req, res) => {
       "delivered",
       "cancelled",
     ];
-    if (!validStatuses.includes(status))
+    if (!validStatuses.includes(status)) {
       return res.status(400).json({ Error: "Invalid status" });
+    }
+
+    const user = await User.findOne({ username: username });
+    if (!user) return res.status(404).json({ Error: "User Not Found" });
 
     const order = await Order.findOneAndUpdate(
-      { user: userId },
+      { user: user.userId },
       { status: status },
       { new: true }
-    );
+    ).populate("user", "username email");
+    
     if (!order) return res.status(404).json({ Error: "Order Not Found" });
 
-    res.status(200).json(order);
+    return res.status(200).json({
+      success: true,
+      message: "Order status updated successfully",
+      data: order
+    });
   } catch (error) {
-    res.sendStatus(500);
-    console.log(error);
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
+
 const deleteOrder = async (req, res) => {
   try {
-    const { userId } = req.params;
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ Error: "Order ID is required" });
 
-    const findOrder = await Order.findOneAndDelete({ user: userId });
-    if (!findOrder) return res.status(404).json({ Error: "Order Not Found" });
+    const deletedOrder = await Order.findOneAndDelete({ orderId: orderId });
+    if (!deletedOrder) return res.status(404).json({ Error: "Order Not Found" });
 
-    console.log(findOrder);
-
-    res.status(204).json({ Message: "Order has been deleted successfully" });
+    return res.status(200).json({
+      success: true,
+      message: "Order deleted successfully"
+    });
   } catch (error) {
-    res.sendStatus(500);
-    console.log(error);
+    console.error(error);
+    return res.sendStatus(500);
   }
 };
 
-module.exports = {
+const getOrderStats = async (req, res) => {
+  try {
+    const totalOrders = await Order.countDocuments();
+    const pendingOrders = await Order.countDocuments({ status: "pending" });
+    const confirmedOrders = await Order.countDocuments({ status: "confirmed" });
+    const shippedOrders = await Order.countDocuments({ status: "shipped" });
+    const deliveredOrders = await Order.countDocuments({ status: "delivered" });
+    const cancelledOrders = await Order.countDocuments({ status: "cancelled" });
+
+    // Calculate total revenue from delivered orders
+    const deliveredOrdersData = await Order.find({ status: "delivered" });
+    const totalRevenue = deliveredOrdersData.reduce((sum, order) => sum + order.cart.totalAmount, 0);
+
+    // Get recent orders (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentOrders = await Order.countDocuments({
+      createdAt: { $gte: sevenDaysAgo }
+    });
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        totalOrders,
+        pendingOrders,
+        confirmedOrders,
+        shippedOrders,
+        deliveredOrders,
+        cancelledOrders,
+        totalRevenue,
+        recentOrders
+      }
+    });
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
+};
+
+
+// User Access
+const getOrderByUserId = async (req, res) => {
+  try {
+    const { userId } = req.user;
+    if (!userId) return res.status(403).json({ Error: "Access Denied" });
+
+    const order = await Order.findOne({ user: userId });
+    if (!order) return res.status(404).json({ Error: "Order is not found" });
+
+    return res.status(200).json(order);
+  } catch (error) {
+    console.error(error);
+    return res.sendStatus(500);
+  }
+};
+
+export {
   getAllOrders,
-  getOrderByUser,
-  createOrder,
-  deleteOrder,
+  getOrderByUserId,
+  getOrderByUserIdAdmin,
   updateOrder,
+  deleteOrder,
+  getOrderStats,
 };

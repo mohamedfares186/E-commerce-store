@@ -1,22 +1,29 @@
-const express = require("express");
-const router = express.Router();
-const categoriesController = require("./categories.controller");
-const authorize = require("../middleware/authorization");
-const accessControl = require("../middleware/accessControl");
+import express from "express";
+import {
+  retrieveAllCategories,
+  retrieveOneCategories,
+  createCategory,
+  deleteCategory
+} from "./categories.controller.js";
+import authenticate from "../middleware/authenticate.js";
+import authorize from "../middleware/authorize.js";
+import { U2000, U9550 } from "../config/roles.js";
 
-router.get("/", categoriesController.retrieveAllCategories);
-router.get("/:slug", categoriesController.retrieveOneCategories);
+const router = express.Router();
+
+router.get("/", retrieveAllCategories);
+router.get("/:slug", retrieveOneCategories);
 router.post(
-  "/create-category",
-  authorize("admin", "moderator"),
-  accessControl.adminOrModeratorAccess,
-  categoriesController.createCategory
+  "/admin/create-category",
+  authenticate,
+  authorize(U2000, U9550),
+  createCategory
 );
 router.delete(
-  "/delete-category",
-  authorize("admin", "moderator"),
-  accessControl.adminOrModeratorAccess,
-  categoriesController.deleteCategory
+  "/admin/delete-category",
+  authenticate,
+  authorize(U2000, U9550),
+  deleteCategory
 );
 
-module.exports = router;
+export default router;

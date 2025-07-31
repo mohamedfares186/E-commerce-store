@@ -1,63 +1,93 @@
-const express = require("express");
+import express from "express";
+import {
+  getAllCarts,
+  getCartByUserIdAdmin,
+  getCartByUserId,
+  createCart,
+  deleteCart,
+  addItemToCart,
+  removeItemFromCart,
+  updateItemInCart,
+  clearCart
+} from "./cart.controller.js";
+import authorize from "../middleware/authorize.js";
+import authenticate from "../middleware/authenticate.js";
+import { selfAccess } from "../middleware/accessControl.js";
+import { U2000, U9550, U1234 } from "../config/roles.js";
+
+
 const router = express.Router();
-const cartController = require("./cart.controller");
-const authorize = require("../middleware/authorization");
-const accessControl = require("../middleware/accessControl");
 
+// User Access
 router.get(
-  "/",
-  authorize("admin", "moderator"),
-  accessControl.adminOrModeratorAccess,
-  cartController.getAllCarts
-);
-
-router.get(
-  "/:id",
-  authorize("admin", "moderator", "user"),
-  accessControl.adminOrModeratorOrUserAccess,
-  cartController.getCartByUserId
+  "/user-cart",
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  getCartByUserId
 );
 
 router.post(
   "/",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.createCart
+  authenticate,
+  authorize(U1234),
+  createCart
 );
 
 router.delete(
   "/",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.deleteCart
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  deleteCart
 );
 
 router.post(
   "/add-item",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.addItemToCart
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  addItemToCart
 );
 
 router.delete(
   "/remove-item/:productId",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.removeItemFromCart
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  removeItemFromCart
 );
 
 router.put(
   "/update-item/:productId",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.updateItemInCart
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  updateItemInCart
 );
 
 router.delete(
   "/clear",
-  authorize("user"),
-  accessControl.userAccess,
-  cartController.clearCart
+  authenticate,
+  authorize(U1234),
+  selfAccess,
+  clearCart
 );
 
-module.exports = router;
+
+// Admin access
+router.get(
+  "/admin/carts",
+  authenticate,
+  authorize(U2000, U9550),
+  getAllCarts
+);
+
+router.get(
+  "/admin/user-cart",
+  authenticate,
+  authorize(U2000, U9550),
+  getCartByUserIdAdmin
+);
+
+export default router;

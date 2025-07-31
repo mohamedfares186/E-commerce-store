@@ -1,6 +1,13 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
+import { U2000, U9550, U1234 } from "../config/roles.js";
 
 const usersSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true,
+    unqiue: true,
+    index: true,
+  },
   firstName: {
     type: String,
     required: true,
@@ -43,8 +50,8 @@ const usersSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ["admin", "moderator", "user"],
-    default: "user",
+    enum: [U2000, U9550, U1234],
+    default: U1234,
   },
   resetPasswordToken: {
     type: String,
@@ -54,4 +61,4 @@ const usersSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model("User", usersSchema);
+export default mongoose.model("User", usersSchema);

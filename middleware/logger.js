@@ -1,15 +1,18 @@
 const logger = (req, res, next) => {
-  const { method, originalUrl, ip } = req;
-  const timeStamp = new Date().toISOString();
+  const { method, hostname, originalUrl } = req;
+  const date = new Date().toISOString();
+  const start = new Date();
 
   res.on("finish", () => {
     const { statusCode } = res;
+    const end = new Date();
+    const duration = end - start;
     console.log(
-      `[${timeStamp}] | ${method} ${originalUrl} - ${ip} / ${statusCode}`
+      `[${date}] | ${method} ${hostname}:${process.env.PORT}${originalUrl} | ${statusCode} - ${duration}ms`
     );
   });
 
   next();
 };
 
-module.exports = logger;
+export default logger;

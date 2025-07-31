@@ -1,31 +1,21 @@
-require("dotenv").config();
-const express = require("express");
+import "dotenv/config";
+import express from "express";
+import cookieParser from "cookie-parser";
+import mongoose from "mongoose";
+import connectDB from "./config/db.js";
+import limiter from "./middleware/rateLimit.js";
+import logger from "./middleware/logger.js";
+import errorHandling from "./middleware/errorHandling.js";
+import auth from "./auth/auth.route.js";
+import users from "./users/users.route.js";
+import categories from "./categories/categories.route.js";
+import products from "./products/products.route.js";
+import cart from "./cart/cart.route.js";
+import orders from "./orders/orders.route.js";
+import checkOut from "./checkout/checkout.route.js";
+
 const app = express();
 const port = process.env.PORT || 3000;
-const cookieParser = require("cookie-parser");
-const mongoose = require("mongoose");
-const connectDB = require("./config/db");
-const rateLimit = require("./middleware/rateLimit");
-const logger = require("./middleware/logger");
-const errorHandling = require("./middleware/errorHandling");
-
-// Authentication routes
-const auth = require("./auth/auth.route");
-
-// Users routes
-const users = require("./users/users.route");
-
-// Categories routes
-const categories = require("./categories/categories.route");
-
-// Products routes
-const products = require("./products/products.route");
-
-// Cart Routes
-const cart = require("./cart/cart.route");
-
-// Orders Routes
-const orders = require("./orders/orders.route");
 
 // MongoDB Connection
 connectDB();
@@ -36,12 +26,13 @@ app.use(express.json());
 app.use(logger);
 
 // Routes
-app.use("/api/auth", rateLimit, auth);
-app.use("/api/users", rateLimit, users);
-app.use("/api/categories", rateLimit, categories);
-app.use("/api/products", rateLimit, products);
-app.use("/api/cart", rateLimit, cart);
-app.use("/api/orders", rateLimit, orders);
+app.use("/api/auth", limiter, auth);
+app.use("/api/users", limiter, users);
+app.use("/api/categories", limiter, categories);
+app.use("/api/products", limiter, products);
+app.use("/api/cart", limiter, cart);
+app.use("/api/orders", limiter, orders);
+app.use("/api/checkout", limiter, checkOut);
 
 // Error Handling Middleware
 app.use(errorHandling);
