@@ -17,6 +17,5 @@ const selfAccess = (req, res, next) => {
   }
 };
 
-export {
-  selfAccess,
-};
+export default selfAccess;
+

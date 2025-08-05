@@ -1,51 +1,20 @@
-import express from "express";
+import { Router } from "express";
 import { 
   retrieveAllProducts, 
   retrieveProductsByCategory, 
   retrieveProductById, 
-  createProduct, 
-  deleteProduct, 
-  updateProduct,
-  getProductStats
 } from "./products.controller.js";
-import authenticate from "../middleware/authenticate.js";
-import authorize from "../middleware/authorize.js";
-import { U2000, U9550 } from "../config/roles.js";
+import {
+  validateProductCategoryQuery,
+  validateProductIdParam,
+  validateProductSearchQuery
+} from "./validate.js";
 
-const router = express.Router();
+const router = Router();
 
 // User and Guest routes
-router.get("/", retrieveAllProducts);
-router.get("/search", retrieveProductsByCategory);
-router.get("/:productId", retrieveProductById);
-
-
-// Admin routes
-router.get(
-  "/admin/stats",
-  authenticate,
-  authorize(U2000, U9550),
-  getProductStats
-);
-
-router.post(
-  "/create-product",
-  authenticate,
-  authorize(U2000, U9550),
-  createProduct
-);
-router.delete(
-  "/delete-product",
-  authenticate,
-  authorize(U2000, U9550),
-  deleteProduct
-);
-
-router.put(
-  "/update-product/:productId",
-  authenticate,
-  authorize(U2000, U9550),
-  updateProduct
-);
+router.get("/", validateProductSearchQuery, retrieveAllProducts);
+router.get("/search", validateProductCategoryQuery, retrieveProductsByCategory);
+router.get("/:productId", validateProductIdParam, retrieveProductById);
 
 export default router;

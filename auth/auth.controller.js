@@ -1,16 +1,17 @@
-import User from "./auth.models.js";
+import User from "../users/users.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import generateId from "../utils/generateId.js";
 import { refreshTokenSecret } from "../config/jwt.js";
-import { 
-  generateAccessToken, 
-  generateRefreshToken, 
-  generateTokens 
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  generateTokens,
 } from "../utils/generateTokens.js";
+import { generateCsrfToken } from "../middleware/csrf.js";
 import sendEmail from "../utils/sendEmails.js";
-
+import sanitize from "../utils/sanitize.js";
 
 const register = async (req, res) => {
   try {
@@ -23,11 +24,18 @@ const register = async (req, res) => {
       repeatPassword,
       dateOfBirth,
     } = req.body;
+
+    // Sanitize user input fields
+    const sanitizedFirstName = sanitize(firstName);
+    const sanitizedLastName = sanitize(lastName);
+    const sanitizedEmail = sanitize(email);
+    const sanitizedUsername = sanitize(username);
+
     if (
-      !firstName ||
-      !lastName ||
-      !email ||
-      !username ||
+      !sanitizedFirstName ||
+      !sanitizedLastName ||
+      !sanitizedEmail ||
+      !sanitizedUsername ||
       !password ||
       !repeatPassword ||
       !dateOfBirth
@@ -41,9 +49,8 @@ const register = async (req, res) => {
 
     if (password !== repeatPassword) return res.sendStatus(400);
 
-    const findUser = await User.findOne({ username: username });
-    if (findUser)
-      return res.status(409).json({ Error: "Invalid Credentials" }); // conflict
+    const findUser = await User.findOne({ username: sanitizedUsername });
+    if (findUser) return res.status(409).json({ Error: "Invalid Credentials" }); // conflict
 
     const passwordHash = await bcrypt.hash(repeatPassword, 10);
 
@@ -53,16 +60,18 @@ const register = async (req, res) => {
 
     const newUser = new User({
       userId: userId,
-      firstName: firstName,
-      lastName: lastName,
-      email: email,
-      username: username,
+      firstName: sanitizedFirstName,
+      lastName: sanitizedLastName,
+      email: sanitizedEmail,
+      username: sanitizedUsername,
       password: passwordHash,
       emailVerifiedToken: hashedToken,
       emailVerifyExpires: Date.now() + 24 * 60 * 60 * 1000,
       dateOfBirth: dateOfBirth,
     });
-    await newUser.save();
+
+    const saved = await newUser.save();
+    if (!saved) return res.status(500).json({ Error: "can not create user" }); // Internal Server Error
 
     const verifyLink = `http://localhost:3000/api/auth/verify-email/${token}`;
 
@@ -72,7 +81,41 @@ const register = async (req, res) => {
       `Click this link to verify your email ${verifyLink}`
     );
 
-    return res.status(201).json({ Message: "Registered successfully, Please Verify your email" }); // created seccussfully
+    // Log the user in after registration
+    const refreshToken = generateRefreshToken(newUser);
+    const accessToken = generateAccessToken(newUser);
+    const csrfToken = generateCsrfToken();
+
+    await User.updateOne(
+      { username: newUser.username }, // filter
+      { $set: { token: refreshToken } } // update
+    );
+
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: false, // Change to true in production
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: false, // Change to true in production
+      sameSite: "strict",
+      maxAge: 15 * 60 * 1000,
+    });
+
+    res.cookie("X-CSRF-TOKEN", csrfToken, {
+      httpOnly: true,
+      secure: false, // Change to true in production
+      sameSite: "strict",
+      maxAge: 3600000, // 1 hour
+    });
+    res.setHeader("X-CSRF-TOKEN", csrfToken);
+
+    return res.status(201).json({
+      Message:
+        "User has been registered successfully, Please verify your email",
+    });
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);
@@ -98,7 +141,9 @@ const emailVerification = async (req, res) => {
     user.emailVerifyExpires = undefined;
     await user.save();
 
-    return res.status(200).json({ Message: "Email has been verified successfully" });
+    return res
+      .status(200)
+      .json({ Message: "Email has been verified successfully" });
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);
@@ -108,12 +153,16 @@ const emailVerification = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { username, password } = req.body;
-    if (!username || !password)
+
+    // Sanitize username input
+    const sanitizedUsername = sanitize(username);
+
+    if (!sanitizedUsername || !password)
       return res
         .status(400)
         .json({ Error: "Please enter username and password" }); // Bad Request
 
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: sanitizedUsername });
     if (!user) return res.status(404).json({ Error: "User Not Found" });
 
     const validatePassword = await bcrypt.compare(password, user.password);
@@ -122,6 +171,7 @@ const login = async (req, res) => {
 
     const refreshToken = generateRefreshToken(user);
     const accessToken = generateAccessToken(user);
+    const csrfToken = generateCsrfToken();
 
     await User.updateOne(
       { username: user.username }, // filter
@@ -140,6 +190,15 @@ const login = async (req, res) => {
       sameSite: "strict",
       maxAge: 15 * 60 * 1000,
     });
+
+    res.cookie("X-CSRF-TOKEN", csrfToken, {
+      httpOnly: true,
+      secure: false, // Change to true in production
+      sameSite: "strict",
+      maxAge: 3600000, // 1 hour
+    });
+    res.setHeader("X-CSRF-TOKEN", csrfToken);
+
     return res.sendStatus(200); // OK
   } catch (error) {
     console.error(error);
@@ -156,8 +215,7 @@ const refresh = async (req, res) => {
     const token = cookies.refreshToken;
 
     const findToken = await User.findOne({ token: token });
-    if (!findToken)
-      return res.status(404).json({ Error: "User Not Found" }); // Not Found
+    if (!findToken) return res.status(404).json({ Error: "User Not Found" }); // Not Found
 
     jwt.verify(token, refreshTokenSecret, (err, decoded) => {
       if (err) return res.sendStatus(401); // Not Authorized
@@ -169,7 +227,7 @@ const refresh = async (req, res) => {
         maxAge: 15 * 60 * 1000,
       });
     });
-    return res.status(201).json({ Message: "Token has been set successfully"}); // Created Successfully
+    return res.status(201).json({ Message: "Token has been set successfully" }); // Created Successfully
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);
@@ -209,9 +267,14 @@ const logout = async (req, res) => {
 const forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
-    if (!email) return res.status(400).json({ Error: "Email is required" });
 
-    const user = await User.findOne({ email: email });
+    // Sanitize email input
+    const sanitizedEmail = sanitize(email);
+
+    if (!sanitizedEmail)
+      return res.status(400).json({ Error: "Email is required" });
+
+    const user = await User.findOne({ email: sanitizedEmail });
     if (!user) return res.status(404).json({ Error: "User Not Found" });
 
     const { token, hashedToken } = generateTokens();
@@ -222,12 +285,14 @@ const forgetPassword = async (req, res) => {
     user.save();
     const resetLink = `http://localhost:3000/api/auth/reset-password/${token}`;
     await sendEmail(
-      email,
+      sanitizedEmail,
       "Password Reset",
       `Click the link to reset your password ${resetLink}`
     );
 
-    return res.status(200).json({ message: "Password reset link sent to your email" });
+    return res
+      .status(200)
+      .json({ message: "Password reset link sent to your email" });
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);
@@ -266,7 +331,9 @@ const resetPassword = async (req, res) => {
     user.resetPasswordExpires = undefined;
 
     await user.save();
-    return res.status(201).json({ Message: "Password has been set successfully" });
+    return res
+      .status(201)
+      .json({ Message: "Password has been set successfully" });
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);

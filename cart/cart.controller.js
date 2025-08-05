@@ -2,50 +2,6 @@ import Cart from "./cart.model.js";
 import Product from "../products/products.model.js";
 import generateId from "../utils/generateId.js";
 
-
-// Admin Access
-const getAllCarts = async (req, res) => {
-  try {
-    const carts = await Cart.find()
-      .populate("user", "username email")
-      .populate("items.productId", "title price imagePath")
-      .sort({ createdAt: -1 });
-    
-    return res.status(200).json({
-      success: true,
-      data: carts,
-      count: carts.length,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
-  }
-};
-
-const getCartByUserIdAdmin = async (req, res) => {
-  try {
-    const { userId } = req.query;
-    if (!userId) return res.status(400).json({ Error: "User ID is required" });
-
-    const findUserCart = await Cart.findOne({ user: userId })
-      .populate("items.productId", "title price imagePath description stock")
-      .populate("user", "username email");
-
-    if (!findUserCart) {
-      return res.status(404).json({ message: "Cart not found for this user" });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: findUserCart,
-    });
-  } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
-  }
-}
-
-
 // User Access
 const getCartByUserId = async (req, res) => {
   try {
@@ -57,14 +13,14 @@ const getCartByUserId = async (req, res) => {
         path: "items.productId",
         select: "title price imagePath stock",
         model: "Product",
-        foreignField: "productId"
+        foreignField: "productId",
       })
       .populate({
         path: "user",
-        select: "username email", // Fields from the User model
+        select: "username email",
         model: "User",
-        foreignField: "userId" // <--- Tell populate to match against this field in the User model
-    });
+        foreignField: "userId",
+      });
 
     if (!findUserCart) {
       return res.status(404).json({ message: "Cart not found for this user" });
@@ -93,13 +49,15 @@ const createCart = async (req, res) => {
       });
     }
 
-    if (quantity <= 0) {
+    const quantityNumber = parseInt(quantity);
+
+    if (quantityNumber <= 0) {
       return res.status(400).json({
         message: "Quantity must be greater than 0",
       });
     }
 
-    if (quantity > 100) {
+    if (quantityNumber > 100) {
       return res.status(400).json({
         message: "Quantity cannot exceed 100 items",
       });
@@ -111,14 +69,14 @@ const createCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (product.stock < quantity) {
+    if (product.stock < quantityNumber) {
       return res.status(400).json({
         message: `Only ${product.stock} items available in stock`,
       });
     }
 
     const price = product.price;
-    const total = price * quantity;
+    const total = price * quantityNumber;
 
     let cart = await Cart.findOne({ user: userId });
 
@@ -129,7 +87,7 @@ const createCart = async (req, res) => {
         cartId: cartId,
         user: userId,
         items: [{ productId, quantity, price, total }],
-        totalQuantity: quantity,
+        totalQuantity: quantityNumber,
         totalAmount: total,
       });
     } else {
@@ -139,7 +97,7 @@ const createCart = async (req, res) => {
       );
 
       if (existingItem) {
-        const newQuantity = existingItem.quantity + quantity;
+        const newQuantity = existingItem.quantity + quantityNumber;
         if (newQuantity > 100) {
           return res.status(400).json({
             message: "Total quantity for this product cannot exceed 100 items",
@@ -164,7 +122,7 @@ const createCart = async (req, res) => {
       path: "items.productId",
       select: "title price imagePath stock",
       model: "Product",
-      foreignField: "productId"
+      foreignField: "productId",
     });
 
     return res.status(201).json({
@@ -212,7 +170,9 @@ const addItemToCart = async (req, res) => {
       });
     }
 
-    if (quantity <= 0) {
+    const quantityNumber = parseInt(quantity);
+
+    if (quantityNumber <= 0) {
       return res.status(400).json({
         message: "Quantity must be greater than 0",
       });
@@ -223,7 +183,7 @@ const addItemToCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (product.stock < quantity) {
+    if (product.stock < quantityNumber) {
       return res.status(400).json({
         message: `Only ${product.stock} items available in stock`,
       });
@@ -239,7 +199,7 @@ const addItemToCart = async (req, res) => {
     );
 
     if (existingItem) {
-      const newQuantity = existingItem.quantity + quantity;
+      const newQuantity = existingItem.quantity + quantityNumber;
       if (newQuantity > 100) {
         return res.status(400).json({
           message: "Total quantity for this product cannot exceed 100 items",
@@ -250,9 +210,9 @@ const addItemToCart = async (req, res) => {
     } else {
       cart.items.push({
         productId,
-        quantity,
+        quantityNumber,
         price: product.price,
-        total: product.price * quantity,
+        total: product.price * quantityNumber,
       });
     }
 
@@ -268,7 +228,7 @@ const addItemToCart = async (req, res) => {
       path: "items.productId",
       select: "title price imagePath stock",
       model: "Product",
-      foreignField: "productId"
+      foreignField: "productId",
     });
 
     return res.status(200).json({
@@ -335,13 +295,15 @@ const updateItemInCart = async (req, res) => {
       });
     }
 
-    if (quantity <= 0) {
+    const quantityNumber = parseInt(quantity);
+
+    if (quantityNumber <= 0) {
       return res.status(400).json({
         message: "Quantity must be greater than 0",
       });
     }
 
-    if (quantity > 100) {
+    if (quantityNumber > 100) {
       return res.status(400).json({
         message: "Quantity cannot exceed 100 items",
       });
@@ -352,7 +314,7 @@ const updateItemInCart = async (req, res) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    if (product.stock < quantity) {
+    if (product.stock < quantityNumber) {
       return res.status(400).json({
         message: `Only ${product.stock} items available in stock`,
       });
@@ -371,7 +333,7 @@ const updateItemInCart = async (req, res) => {
       return res.status(404).json({ message: "Item not found in cart" });
     }
 
-    existingItem.quantity = quantity;
+    existingItem.quantity = quantityNumber;
     existingItem.total = existingItem.quantity * existingItem.price;
 
     // Recalculate totals
@@ -386,7 +348,7 @@ const updateItemInCart = async (req, res) => {
       path: "items.productId",
       select: "title price imagePath stock",
       model: "Product",
-      foreignField: "productId"
+      foreignField: "productId",
     });
 
     return res.status(200).json({
@@ -427,8 +389,6 @@ const clearCart = async (req, res) => {
 };
 
 export {
-  getAllCarts,
-  getCartByUserIdAdmin,
   getCartByUserId,
   createCart,
   deleteCart,

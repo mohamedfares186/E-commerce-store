@@ -1,23 +1,28 @@
-import express from "express";
-import { checkOut, orderVerifying } from "./checkout.controller.js";
+import { Router } from "express";
 import authenticate from "../middleware/authenticate.js";
-import { selfAccess } from "../middleware/accessControl.js";
+import selfAccess from "../middleware/accessControl.js";
+import { verifyCsrfToken } from "../middleware/csrf.js";
+import { checkOut, orderVerifying } from "./checkout.controller.js";
+import { validateCheckout, validateOrderVerification } from "./validate.js";
 
-const router = express.Router();
+const router = Router();
 
 router.post(
-	"/",
-	authenticate,
-	selfAccess,
-	checkOut
+  "/",
+  authenticate,
+  verifyCsrfToken,
+  selfAccess,
+  validateCheckout,
+  checkOut
 );
 
 router.get(
-	"/verify-order/:token",
-	authenticate,
-	selfAccess,
-	orderVerifying
+  "/verify-order/:token",
+  authenticate,
+  verifyCsrfToken,
+  selfAccess,
+  validateOrderVerification,
+  orderVerifying
 );
-
 
 export default router;

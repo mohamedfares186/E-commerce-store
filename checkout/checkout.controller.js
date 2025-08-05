@@ -1,23 +1,33 @@
 import crypto from "crypto";
-import User from "../auth/auth.models.js";
+import User from "../users/users.model.js";
 import Cart from "../cart/cart.model.js";
 import Order from "../orders/orders.model.js";
 import Product from "../products/products.model.js";
 import generateId from "../utils/generateId.js";
 import { generateTokens } from "../utils/generateTokens.js";
 import sendEmail from "../utils/sendEmails.js";
-
+import sanitize from "../utils/sanitize.js";
+import Checkout from "./checkout.model.js";
 
 const checkOut = async (req, res) => {
-	try {
+  try {
     const { userId } = req.user;
-    const { address } = req.body;
+    const { paymentMethod, address } = req.body;
 
-    if (!address) {
+    // Sanitize input
+    const sanitizedAddress = sanitize(address);
+    const sanitizedPaymentMethod = sanitize(paymentMethod);
+
+    if (!sanitizedAddress) {
       return res
         .status(400)
         .json({ Error: "User Address is required to complete the order" });
     }
+
+    if (!sanitizedPaymentMethod)
+      return res
+        .status(400)
+        .json({ Error: "Please choose a valid payment method" });
 
     const userCart = await Cart.findOne({ user: userId });
     if (!userCart) {
@@ -37,7 +47,9 @@ const checkOut = async (req, res) => {
     // Check and reserve stock before creating order
     const stockCheck = await Promise.all(
       products.map(async (product) => {
-        const cartItem = cartItems.find(item => item.productId === product.productId);
+        const cartItem = cartItems.find(
+          (item) => item.productId === product.productId
+        );
         if (cartItem.quantity > product.stock) {
           return { product, available: false };
         }
@@ -45,18 +57,61 @@ const checkOut = async (req, res) => {
       })
     );
 
-    const unavailableProducts = stockCheck.filter(item => !item.available);
+    const unavailableProducts = stockCheck.filter((item) => !item.available);
     if (unavailableProducts.length > 0) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         Error: "Some products have insufficient stock",
-        products: unavailableProducts.map(item => item.product.title)
+        products: unavailableProducts.map((item) => item.product.title),
       });
     }
 
-    const { paymentMethod } = req.body;
-    if (!paymentMethod) return res.status(400).json({ Error: "Please choose a valid payment method" });
+    if (sanitizedPaymentMethod === "card") {
+      const { card, cardNumber, cardExpiry, cardCvv } = req.body;
 
-    const paymentStatus = paymentMethod === "cashOnDelivery" ? "unpaid" : "paid";
+      const sanitizedCard = sanitize(card);
+      const sanitizedCardNumber = sanitize(cardNumber);
+      const sanitizedCardExpiry = sanitize(cardExpiry);
+      const sanitizedCardCvv = sanitize(cardCvv);
+
+      if (
+        !sanitizedCard ||
+        !sanitizedCardNumber ||
+        !sanitizedCardExpiry ||
+        !sanitizedCardCvv
+      )
+        return res
+          .status(400)
+          .json({ Error: "Please enter valid card details" });
+
+      const checkout = new Checkout({
+        userId: userId,
+        address: sanitizedAddress,
+        card: sanitizedCard,
+        cardNumber: sanitizedCardNumber,
+        cardExpiry: sanitizedCardExpiry,
+        cardCvv: sanitizedCardCvv,
+        totalAmount: userCart.totalAmount,
+      });
+
+      await checkout.save();
+    }
+
+    if (sanitizedPaymentMethod === "cashOnDelivery") {
+      const checkout = new Checkout({
+        userId: userId,
+        address: sanitizedAddress,
+        paymentMethod: "cashOnDelivery",
+        cardNumber: "N/A",
+        cardExpiry: "N/A",
+        cardCvv: "N/A",
+        totalAmount: userCart.totalAmount,
+      });
+
+      await checkout.save();
+    }
+
+    const paymentStatus =
+      sanitizedPaymentMethod === "cashOnDelivery" ? "unpaid" : "paid";
 
     const orderVerified = false;
 
@@ -81,10 +136,10 @@ const checkOut = async (req, res) => {
         totalQuantity: userCart.totalQuantity,
         totalAmount: userCart.totalAmount,
       },
-      address: address,
+      address: sanitizedAddress,
       orderVerifiedToken: hashedToken,
       orderVerifyExpires: Date.now() + 60 * 60 * 1000,
-      paymentMethod: paymentMethod,
+      paymentMethod: sanitizedPaymentMethod,
       paymentStatus: paymentStatus,
       status: verify,
     });
@@ -117,8 +172,9 @@ const checkOut = async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Order has been created successfully, please verify your order via email",
-      data: userOrder
+      message:
+        "Order has been created successfully, please verify your order via email",
+      data: userOrder,
     });
   } catch (error) {
     console.error(error);
@@ -128,8 +184,7 @@ const checkOut = async (req, res) => {
 
 const orderVerifying = async (req, res) => {
   try {
-    const 
-    { token } = req.params;
+    const { token } = req.params;
 
     const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
 
@@ -141,19 +196,24 @@ const orderVerifying = async (req, res) => {
     if (!order)
       return res.status(400).json({ Error: "Invalid or Expired token" });
 
+    const paymentStatus =
+      order.paymentMethod === "cashOnDelivery" ? "unpaid" : "paid";
+
+    order.paymentStatus = paymentStatus;
+
     order.orderVerified = true;
     order.orderVerifiedToken = undefined;
     order.orderVerifyExpires = undefined;
+    order.status = "confirmed";
     await order.save();
 
-    return res.status(200).json({ Message: "Order has been verified successfully" });
+    return res
+      .status(200)
+      .json({ Message: "Order has been verified successfully" });
   } catch (error) {
     console.error(error);
     return res.sendStatus(500);
   }
 };
 
-export {
-  checkOut,
-  orderVerifying
-};
+export { checkOut, orderVerifying };
