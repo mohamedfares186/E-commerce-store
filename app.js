@@ -1,9 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
-import mongoose from "mongoose";
 import helmet from "helmet";
-import connectDB from "./config/db.js";
 import limiter from "./middleware/rateLimit.js";
 import logger from "./middleware/logger.js";
 import errorHandling from "./middleware/errorHandling.js";
@@ -22,10 +20,6 @@ import ordersAdmin from "./orders/orders.adminRoute.js";
 import checkOut from "./checkout/checkout.route.js";
 
 const app = express();
-const port = process.env.PORT || 3000;
-
-// MongoDB Connection
-connectDB();
 
 // Middleware
 app.use(cookieParser());
@@ -74,9 +68,4 @@ app.use("/api/admin/orders", limiter, ordersAdmin);
 // Error Handling Middleware
 app.use(errorHandling);
 
-mongoose.connection.once("open", () => {
-  console.log("Connected to MongoDB successfully");
-  app.listen(port, () => {
-    console.log("Server is running");
-  });
-});
+export default app;
