@@ -1,6 +1,12 @@
 # Environment Variables
 .env
+.env.*
 
 # Packages
 node_modules
 
+# Logs
+/logs
+
+# Database
+/database

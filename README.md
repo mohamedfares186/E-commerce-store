@@ -1,12 +1,13 @@
-## 📚 Table of Contents
+# 📚 Table of Contents
 
+- [Getting Started](#-getting-started)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
 - [Security Highlights](#-security-highlights)
 - [Testing & Dev Tools](#-testing--dev-tools)
 - [Prerequisites](#-prerequisites)
 - [Installation](#-installation)
-- [Run Development Server](#running-the-development-server)
+- [Run Development Server](#-running-development-server)
 - [Testing](#-testing)
 - [Environment Variables](#-environment-variables)
 - [Dependencies Reference](#-dependencies-reference)
@@ -14,7 +15,9 @@
 
 ---
 
-# 🛡️ E-Commerce Store (Node.js + Express + MongoDB)
+## 🛡️ Getting Started
+
+### E-Commerce Store (Node.js + Express + MongoDB)
 
 a complete backend for an e-commerce website constructed using **MongoDB**, **Express**, and **Mongoose**. With the right middleware structure, role-based access control, CSRF protection, and unit/integration testing, this project is safe, scalable, and prepared for production.
 
@@ -112,18 +115,16 @@ Security is a top priority in this project. Implemented protections include:
 ## 📥 Installation
 
 ```bash
-git clone https://github.com/your-username/ecommerce-backend.git
-cd ecommerce-backend
+git clone https://github.com/mohamedfares186/E-commerce-store.git
+cd e-commerce
 npm install
-cp .env.example .env
-npm run dev
 ```
 
 ---
 
-### Running the development server
+### ⚙️ Running development server
 
-```
+```bash
 npm run dev
 ```
 
@@ -131,7 +132,7 @@ npm run dev
 
 ### 🧪 Testing
 
-```
+```bash
 npm test
 ```
 
