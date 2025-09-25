@@ -1,0 +1,48 @@
+paths:
+  /api/checkout:
+    post:
+      tags:
+        - checkout
+      summary: Checkout
+      description: Complete the checkout process for a cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Checkout"
+      responses:
+        "200":
+          description: Checkout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+components:
+  schemas:
+    Checkout:
+      type: object
+      properties:
+        cartId:
+          type: string
+        paymentMethod:
+          type: string
+        shippingAddress:
+          type: string
+      required:
+        - cartId
+        - paymentMethod
+        - shippingAddress
+    CheckoutResponse:
+      type: object
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+        message:
+          type: string
+      required:
+        - orderId
+        - status
+        - message

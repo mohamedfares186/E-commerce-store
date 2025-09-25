@@ -59,7 +59,7 @@ app.use(
 app.use(requestLogger);
 
 // Swagger routes
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Routes
 app.use("/api/auth", auth);
@@ -71,11 +71,11 @@ app.use("/api/orders", orders);
 app.use("/api/checkout", checkOut);
 
 // Admin Routes
-app.use("/api/admin/users", usersAdmin);
-app.use("/api/admin/categories", categoriesAdmin);
-app.use("/api/admin/products", productsAdmin);
-app.use("/api/admin/carts", cartAdmin);
-app.use("/api/admin/orders", ordersAdmin);
+app.use("/api/users/admin", usersAdmin);
+app.use("/api/categories/admin", categoriesAdmin);
+app.use("/api/products/admin", productsAdmin);
+app.use("/api/carts/admin", cartAdmin);
+app.use("/api/orders/admin", ordersAdmin);
 
 // Error Handling Middleware
 app.use(errorHandling);

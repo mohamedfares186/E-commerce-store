@@ -1,6 +1,0 @@
-paths:
-  # merge other files
-  /auth/login:
-    $ref: "./auth.yml#/paths/~1auth~1login"
-  /products:
-    $ref: "./products.yml#/paths/~1products"

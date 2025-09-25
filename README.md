@@ -1,13 +1,12 @@
 # 📚 Table of Contents
 
-- [Getting Started](#-getting-started)
+- [Getting Started](#️-getting-started)
 - [Features](#-features)
 - [Tech Stack](#-tech-stack)
-- [Security Highlights](#-security-highlights)
-- [Testing & Dev Tools](#-testing--dev-tools)
-- [Prerequisites](#-prerequisites)
+- [Security Highlights](#️-security-highlights)
+- [Prerequisites](#️-prerequisites)
 - [Installation](#-installation)
-- [Run Development Server](#-running-development-server)
+- [Run Development Server](#️-running-development-server)
 - [Testing](#-testing)
 - [Environment Variables](#-environment-variables)
 - [Dependencies Reference](#-dependencies-reference)
@@ -74,6 +73,7 @@ a complete backend for an e-commerce website constructed using **MongoDB**, **Ex
 | **express-rate-limit** | Throttle requests          |
 | **express-validator**  | Validate user input        |
 | **helmet**             | Secure headers             |
+| **compression**        | compress HTTP response     |
 | **sanitize-html**      | sanitize user input        |
 | **nanoid**             | Generate unique IDs        |
 | **vitest**             | Testing framework          |
@@ -176,6 +176,7 @@ All official docs for referenced libraries:
 - [express-rate-limit](https://www.npmjs.com/package/express-rate-limit)
 - [express-validator](https://express-validator.github.io/docs/)
 - [helmet](https://www.npmjs.com/package/helmet)
+- [compression](https://www.npmjs.com/package/compression/v/1.3.1)
 - [sanitize-html](https://www.npmjs.com/package/sanitize-html)
 - [nanoid](https://www.npmjs.com/package/nanoid)
 - [eslint](https://eslint.org/)

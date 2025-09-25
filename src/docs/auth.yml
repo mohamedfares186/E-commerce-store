@@ -1,0 +1,307 @@
+paths:
+  /api/auth/register:
+    post:
+      tags:
+        - authentication
+      summary: Register a new user
+      description: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserRegister"
+            example:
+              firstName: "John"
+              lastName: "Doe"
+              email: "user@example.com"
+              username: "johndoe"
+              password: "SecurePass123!"
+              repeatPassword: "SecurePass123!"
+              dateOfBirth: "1990-01-01"
+
+      responses:
+        "201":
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User has been registered successfully, Please verify your email"
+  /api/auth/login:
+    post:
+      tags:
+        - authentication
+      summary: User login
+      description: Authenticate a user and return a JWT token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserLogin"
+            example:
+              username: "johndoe"
+              password: "SecurePass123!"
+
+      responses:
+        "200":
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: JWT token for authenticated user
+                example:
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "401":
+          description: Unauthorized - Invalid credentials
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid username or password"
+  /api/auth/logout:
+    post:
+      tags:
+        - authentication
+      summary: User logout
+      description: Invalidate the user's JWT token (if using token blacklisting)
+      responses:
+        "200":
+          description: Successful logout
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "User has been logged out successfully"
+        "401":
+          description: Unauthorized - No valid token provided
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "No token provided or token is invalid"
+  /api/auth/refresh:
+    post:
+      tags:
+        - authentication
+      summary: Refresh JWT token
+      description: Generate a new JWT token using a valid refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: The refresh token issued during login
+              required:
+                - refreshToken
+            example:
+              refreshToken: "dGhpcy1pcz1hLXJlZnJlc2gtdG9rZW4uLi4="
+      responses:
+        "200":
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    description: New JWT token for authenticated user
+                example:
+                  token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "401":
+          description: Unauthorized - Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid or expired refresh token"
+
+  /api/auth/forget-password:
+    post:
+      tags:
+        - authentication
+      summary: Request password reset
+      description: Send a password reset link to the user's email
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: The email address associated with the user account
+              required:
+                - email
+            example:
+              email: "user@example.com"
+  /api/auth/reset-password/{token}:
+    post:
+      tags:
+        - authentication
+      summary: Reset user password
+      description: Reset the user's password using the provided token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Password reset token sent to the user's email
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPassword:
+                  type: string
+                  minLength: 8
+                  description: The new password for the user account
+                confirmNewPassword:
+                  type: string
+                  minLength: 8
+                  description: Confirmation of the new password
+              required:
+                - newPassword
+                - confirmNewPassword
+            example:
+              newPassword: "NewSecurePass123!"
+              confirmNewPassword: "NewSecurePass123!"
+      responses:
+        "200":
+          description: Password reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password has been reset successfully"
+        "400":
+          description: Bad Request - Invalid or expired token, or passwords do not match
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid or expired token"
+  /api/auth/verify-email/{token}:
+    post:
+      tags:
+        - authentication
+      summary: Verify user email
+      description: Verify the user's email address using the provided token
+      parameters:
+        - name: token
+          in: path
+          required: true
+          description: Email verification token sent to the user's email
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Email verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Email has been verified successfully"
+        "400":
+          description: Bad Request - Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid or expired token"
+components:
+  schemas:
+    UserRegister:
+      type: object
+      properties:
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: User first name
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          description: User last name
+        email:
+          type: string
+          format: email
+          description: User email address
+        username:
+          type: string
+          description: Username
+        password:
+          type: string
+          minLength: 8
+          description: User password (minimum 8 characters)
+        repeatPassword:
+          type: string
+          minLength: 8
+          description: password confirmation
+        dateOfBirth:
+          type: string
+          format: date-time
+      required:
+        - firstName
+        - lastName
+        - email
+        - username
+        - password
+        - repeatPassword
+        - dateOfBirth
+
+    UserLogin:
+      type: object
+      properties:
+        username:
+          type: string
+          description: Username
+        password:
+          type: string
+          description: User password
+      required:
+        - username
+        - password

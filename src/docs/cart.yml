@@ -1,0 +1,107 @@
+paths:
+  /api/carts:
+    get:
+      tags:
+        - cart
+      summary: Get all carts
+      description: Retrieve a list of all carts
+      responses:
+        "200":
+          description: List of carts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Cart"
+    post:
+      tags:
+        - cart
+      summary: Create a new cart
+      description: Create a new cart for a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cart"
+      responses:
+        "201":
+          description: Cart created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+  /api/carts/{id}:
+    get:
+      tags:
+        - cart
+      summary: Get cart by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cart details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+    put:
+      tags:
+        - cart
+      summary: Update cart
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Cart"
+      responses:
+        "200":
+          description: Cart updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+    delete:
+      tags:
+        - cart
+      summary: Delete cart
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Cart deleted
+components:
+  schemas:
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+        userId:
+          type: string
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/Product"
+        total:
+          type: number
+      required:
+        - userId
+        - products
+        - total
