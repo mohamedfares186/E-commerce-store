@@ -1,5 +1,6 @@
 import User from "../../users/models/users.model.mjs";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const resetPassword = async (req, res) => {
   try {

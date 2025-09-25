@@ -1,4 +1,5 @@
 import User from "../../users/models/users.model.mjs";
+import crypto from "crypto";
 
 const emailVerification = async (req, res) => {
   try {

@@ -8,6 +8,7 @@
 - [Installation](#-installation)
 - [Run Development Server](#️-running-development-server)
 - [Testing](#-testing)
+- [Documentation](#documentation)
 - [Environment Variables](#-environment-variables)
 - [Dependencies Reference](#-dependencies-reference)
 - [License](#-license)
@@ -134,6 +135,14 @@ npm run dev
 
 ```bash
 npm test
+```
+
+---
+
+### Documentation
+
+```url
+http://localhost:3000/api/docs
 ```
 
 ---

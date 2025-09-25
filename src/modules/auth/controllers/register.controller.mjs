@@ -81,7 +81,7 @@ const register = async (req, res) => {
     // Log the user in after registration
     const refreshToken = generateRefreshToken(newUser);
     const accessToken = generateAccessToken(newUser);
-    const csrfToken = generateCsrfToken();
+    const csrfToken = generateCsrfToken(newUser);
 
     await User.updateOne(
       { username: newUser.username }, // filter

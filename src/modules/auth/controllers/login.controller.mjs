@@ -28,7 +28,7 @@ const login = async (req, res) => {
 
     const refreshToken = generateRefreshToken(user);
     const accessToken = generateAccessToken(user);
-    const csrfToken = generateCsrfToken();
+    const csrfToken = generateCsrfToken(user);
 
     await User.updateOne(
       { username: user.username }, // filter
