@@ -40,7 +40,7 @@ export const validateCategoryCreation = [
     .trim()
     .isLength({ min: 2, max: 50 })
     .withMessage("Category slug must be between 2 and 50 characters")
-    .matches(/^[a-z0-9\-]+$/)
+    .matches(/^[a-z0-9-]+$/)
     .withMessage(
       "Category slug can only contain lowercase letters, numbers, and hyphens"
     ),
@@ -68,7 +68,7 @@ export const validateCategorySlugParam = [
     .withMessage("Category slug is required")
     .isLength({ min: 1, max: 50 })
     .withMessage("Category slug must be between 2 and 50 characters")
-    .matches(/^[a-z0-9\-]+$/)
+    .matches(/^[a-z0-9-]+$/)
     .withMessage(
       "Category slug can only contain lowercase letters, numbers, and hyphens"
     ),

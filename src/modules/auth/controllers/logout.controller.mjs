@@ -1,5 +1,6 @@
 import User from "../../users/models/users.model.mjs";
 import { logger } from "../../../middleware/logger.mjs";
+import env from "../../../config/env.mjs";
 
 const logout = async (req, res) => {
   try {

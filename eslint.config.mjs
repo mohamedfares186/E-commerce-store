@@ -9,5 +9,5 @@ export default defineConfig([
     extends: ["js/recommended"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
   },
-  globalIgnores(["node_modules/*", "test/*"]),
+  globalIgnores(["node_modules/*", "test/*", "./src/**/generateSlug.mjs"]),
 ]);
