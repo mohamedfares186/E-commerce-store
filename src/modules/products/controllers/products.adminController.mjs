@@ -2,6 +2,7 @@ import Product from "../models/products.model.mjs";
 import Category from "../../categories/models/categories.model.mjs";
 import generateId from "../../../utils/generateId.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // Admin Access
 const createProduct = async (req, res) => {
@@ -69,8 +70,8 @@ const createProduct = async (req, res) => {
       data: newProduct,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error creating a product: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -93,8 +94,8 @@ const deleteProduct = async (req, res) => {
       message: "Product has been deleted successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error deleting a product: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -151,8 +152,8 @@ const updateProduct = async (req, res) => {
       data: findProduct,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error updating a product: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -195,8 +196,8 @@ const getProductStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error getting orders statistics: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

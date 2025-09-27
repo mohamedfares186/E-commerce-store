@@ -2,6 +2,7 @@ import User from "../../users/models/users.model.mjs";
 import jwt from "jsonwebtoken";
 import env from "../../../config/env.mjs";
 import { generateAccessToken } from "../../../utils/generateTokens.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 const refresh = async (req, res) => {
   try {
@@ -19,15 +20,15 @@ const refresh = async (req, res) => {
       const accessToken = generateAccessToken(decoded);
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        secure: false, // Change to true in Production
+        secure: env.env === "production",
         sameSite: "strict",
         maxAge: 15 * 60 * 1000,
       });
     });
     return res.status(201).json({ Message: "Token has been set successfully" }); // Created Successfully
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error refresh a new access token: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

@@ -8,6 +8,7 @@ import { generateTokens } from "../../../utils/generateTokens.mjs";
 import sendEmail from "../../../utils/sendEmails.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
 import Checkout from "../models/checkout.model.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 const checkOut = async (req, res) => {
   try {
@@ -177,8 +178,8 @@ const checkOut = async (req, res) => {
       data: userOrder,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error processing a checkout: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -211,8 +212,8 @@ const orderVerifying = async (req, res) => {
       .status(200)
       .json({ Message: "Order has been verified successfully" });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error verifying an order: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

@@ -18,6 +18,12 @@ import validateUserRefreshToken from "../validate/refresh.validation.mjs";
 import validateForgotPassword from "../validate/forgetPassword.validation.mjs";
 import validateResetPassword from "../validate/resetPassword.validation.mjs";
 
+// authentication
+import authenticate from "../../../middleware/authenticate.mjs";
+
+// CSRF
+import { validateCsrfToken } from "../../../middleware/csrf.mjs";
+
 const router = Router();
 
 router.post("/register", validateUserRegistration, register);
@@ -28,7 +34,7 @@ router.post(
   validateEmailVerification,
   emailVerification
 );
-router.post("/refresh", validateUserRefreshToken, refresh);
+router.post("/refresh", authenticate, validateCsrfToken, validateUserRefreshToken, refresh);
 router.post("/forget-password", validateForgotPassword, forgetPassword);
 router.post("/reset-password/:token", validateResetPassword, resetPassword);
 

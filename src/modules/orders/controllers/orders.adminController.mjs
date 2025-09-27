@@ -1,6 +1,7 @@
 import User from "../../users/models/users.model.mjs";
 import Order from "../models/orders.model.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // Admin Access
 const getAllOrders = async (req, res) => {
@@ -17,8 +18,8 @@ const getAllOrders = async (req, res) => {
       count: orders.length,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error admin getting all orders: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -43,8 +44,8 @@ const getOrderByUserIdAdmin = async (req, res) => {
       count: orders.length,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error admin getting order by user ID: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -89,8 +90,8 @@ const updateOrder = async (req, res) => {
       data: order,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error updating order status: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -109,8 +110,8 @@ const deleteOrder = async (req, res) => {
       message: "Order deleted successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error deleting an order: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -151,8 +152,8 @@ const getOrderStats = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error getting orders statistics: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

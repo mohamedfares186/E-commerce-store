@@ -6,6 +6,8 @@ import {
   generateRefreshToken,
 } from "../../../utils/generateTokens.mjs";
 import { generateCsrfToken } from "../../../middleware/csrf.mjs";
+import { logger } from "../../../middleware/logger.mjs";
+import env from "../../../config/env.mjs";
 
 const login = async (req, res) => {
   try {
@@ -35,31 +37,31 @@ const login = async (req, res) => {
       { $set: { token: refreshToken } } // update
     );
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("x-refresh-token", refreshToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
       maxAge: 7 * 60 * 60 * 1000,
     });
-    res.cookie("accessToken", accessToken, {
+    res.cookie("x-access-token", accessToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
       maxAge: 15 * 60 * 1000,
     });
 
-    res.cookie("X-CSRF-TOKEN", csrfToken, {
+    res.cookie("x-csrf-token", csrfToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 3600000,
     });
-    res.setHeader("X-CSRF-TOKEN", csrfToken);
+    res.setHeader("x-csrf-token", csrfToken);
 
-    return res.sendStatus(200); // OK
+    return res.sendStatus(200);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error log user in: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

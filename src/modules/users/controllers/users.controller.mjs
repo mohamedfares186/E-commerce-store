@@ -1,5 +1,7 @@
 import User from "../models/users.model.mjs";
 import bcrypt from "bcryptjs";
+import { logger } from "../../../middleware/logger.mjs";
+
 
 // User Access
 const findUserById = async (req, res) => {
@@ -11,8 +13,8 @@ const findUserById = async (req, res) => {
     if (!user) return res.status(404).json({ Error: "User Not Found" });
     return res.status(200).json(user);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error finding user by ID: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -45,8 +47,8 @@ const updateUserPassword = async (req, res) => {
       .status(200)
       .json({ Message: "Password has been updated successfully" });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error updating user password:", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

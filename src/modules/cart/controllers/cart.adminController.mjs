@@ -1,5 +1,6 @@
 import Cart from "../models/cart.model.mjs";
 import User from "../../users/models/users.model.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // Admin Access
 const getAllCarts = async (req, res) => {
@@ -12,8 +13,8 @@ const getAllCarts = async (req, res) => {
       count: carts.length,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error getting all carts: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -41,8 +42,8 @@ const getCartByUserIdAdmin = async (req, res) => {
       data: findUserCart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error admin getting cart by user Id: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

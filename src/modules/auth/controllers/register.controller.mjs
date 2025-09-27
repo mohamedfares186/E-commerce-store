@@ -7,8 +7,11 @@ import {
   generateTokens,
 } from "../../../utils/generateTokens.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
-import { generateCsrfToken } from "../../../middleware/csrf.mjs";
 import sendEmail from "../../../utils/sendEmails.mjs";
+import { generateCsrfToken } from "../../../middleware/csrf.mjs";
+import { logger } from "../../../middleware/logger.mjs";
+import env from "../../../config/env.mjs";
+
 
 const register = async (req, res) => {
   try {
@@ -37,7 +40,7 @@ const register = async (req, res) => {
       !repeatPassword ||
       !dateOfBirth
     )
-      return res.status(400).json({ Error: "Please enter valid data" }); // bad request
+      return res.status(400).json({ Error: "Please enter valid data" });
 
     if (password.length < 8)
       return res
@@ -47,7 +50,7 @@ const register = async (req, res) => {
     if (password !== repeatPassword) return res.sendStatus(400);
 
     const findUser = await User.findOne({ username: sanitizedUsername });
-    if (findUser) return res.status(409).json({ Error: "Invalid Credentials" }); // conflict
+    if (findUser) return res.status(409).json({ Error: "Invalid Credentials" });
 
     const passwordHash = await bcrypt.hash(repeatPassword, 10);
 
@@ -68,7 +71,7 @@ const register = async (req, res) => {
     });
 
     const saved = await newUser.save();
-    if (!saved) return res.status(500).json({ Error: "can not create user" }); // Internal Server Error
+    if (!saved) return res.status(500).json({ error: "Internal server error" });
 
     const verifyLink = `http://localhost:3000/api/auth/verify-email/${token}`;
 
@@ -88,34 +91,34 @@ const register = async (req, res) => {
       { $set: { token: refreshToken } } // update
     );
 
-    res.cookie("refreshToken", refreshToken, {
+    res.cookie("x-refresh-token", refreshToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.cookie("accessToken", accessToken, {
+    res.cookie("x-access-token", accessToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
       maxAge: 15 * 60 * 1000,
     });
 
-    res.cookie("X-CSRF-TOKEN", csrfToken, {
+    res.cookie("x-csrf-token", csrfToken, {
       httpOnly: true,
-      secure: false, // Change to true in production
+      secure: env.env === "production",
       sameSite: "strict",
-      maxAge: 3600000, // 1 hour
+      maxAge: 3600000,
     });
-    res.setHeader("X-CSRF-TOKEN", csrfToken);
+    res.setHeader("x-csrf-token", csrfToken);
 
     return res.status(201).json({
       Message:
         "User has been registered successfully, Please verify your email",
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error registering a new user: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

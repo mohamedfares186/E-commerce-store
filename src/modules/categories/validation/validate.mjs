@@ -54,7 +54,7 @@ export const validateCategoryDeletion = [
     .trim()
     .notEmpty()
     .withMessage("Category title is required")
-    .isLength({ min: 10, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage("Invalid title format"),
 
   handleValidationErrors,
@@ -66,7 +66,7 @@ export const validateCategorySlugParam = [
     .trim()
     .notEmpty()
     .withMessage("Category slug is required")
-    .isLength({ min: 2, max: 50 })
+    .isLength({ min: 1, max: 50 })
     .withMessage("Category slug must be between 2 and 50 characters")
     .matches(/^[a-z0-9\-]+$/)
     .withMessage(
@@ -109,7 +109,7 @@ export const validateCategorySearch = [
     .trim()
     .notEmpty()
     .withMessage("Search term is required")
-    .isLength({ min: 2, max: 100 })
+    .isLength({ min: 1, max: 100 })
     .withMessage("Search term must be between 2 and 100 characters"),
 
   query("limit")

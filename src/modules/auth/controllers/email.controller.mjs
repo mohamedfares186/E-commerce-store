@@ -1,5 +1,6 @@
 import User from "../../users/models/users.model.mjs";
 import crypto from "crypto";
+import { logger } from "../../../middleware/logger.mjs";
 
 const emailVerification = async (req, res) => {
   try {
@@ -24,8 +25,8 @@ const emailVerification = async (req, res) => {
       .status(200)
       .json({ Message: "Email has been verified successfully" });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error sending verification email: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

@@ -1,4 +1,5 @@
 import Order from "../models/orders.model.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // User Access
 const getOrderByUserId = async (req, res) => {
@@ -11,8 +12,7 @@ const getOrderByUserId = async (req, res) => {
 
     return res.status(200).json(order);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error getting user order: ", error.message)
   }
 };
 

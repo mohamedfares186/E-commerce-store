@@ -6,7 +6,7 @@ const selfAccess = (req, res, next) => {
       if (req.user.userId === req.params.userId) {
         return next();
       } else {
-        return res.status(403).json({ Error: "Access Denied" });
+        return res.status(403).json({ Error: "Access Denied345" });
       }
     }
 

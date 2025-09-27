@@ -1,6 +1,7 @@
 import User from "../../users/models/users.model.mjs";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import { logger } from "../../../middleware/logger.mjs";
 
 const resetPassword = async (req, res) => {
   try {
@@ -38,8 +39,8 @@ const resetPassword = async (req, res) => {
       .status(201)
       .json({ Message: "Password has been set successfully" });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error reseting a new password: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

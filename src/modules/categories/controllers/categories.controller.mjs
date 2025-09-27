@@ -1,4 +1,5 @@
 import Category from "../models/categories.model.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // User and Guest Access
 const retrieveAllCategories = async (req, res) => {
@@ -9,8 +10,8 @@ const retrieveAllCategories = async (req, res) => {
 
     return res.status(200).json(categories);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving all categories: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -26,8 +27,8 @@ const retrieveOneCategories = async (req, res) => {
 
     return res.status(200).json(findCategory);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving one category: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

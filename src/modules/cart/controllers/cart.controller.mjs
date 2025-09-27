@@ -1,6 +1,7 @@
 import Cart from "../models/cart.model.mjs";
 import Product from "../../products/models/products.model.mjs";
 import generateId from "../../../utils/generateId.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // User Access
 const getCartByUserId = async (req, res) => {
@@ -31,8 +32,8 @@ const getCartByUserId = async (req, res) => {
       data: findUserCart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error getting the user cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -134,8 +135,8 @@ const createCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error creating a cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -154,8 +155,8 @@ const deleteCart = async (req, res) => {
       message: "Cart deleted successfully",
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error deleting a cart", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -237,8 +238,8 @@ const addItemToCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error adding item to a cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -278,8 +279,8 @@ const removeItemFromCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error adding item to a cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -357,8 +358,8 @@ const updateItemInCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error updating item in a cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -383,8 +384,8 @@ const clearCart = async (req, res) => {
       data: cart,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error clearing a cart: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

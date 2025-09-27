@@ -1,5 +1,6 @@
 import Category from "../models/categories.model.mjs";
 import generateId from "../../../utils/generateId.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // Admin Access
 const createCategory = async (req, res) => {
@@ -24,8 +25,8 @@ const createCategory = async (req, res) => {
       .status(201)
       .json({ Message: `${title} Category has been created successfully` }); // Created
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error creating a category: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -42,8 +43,8 @@ const deleteCategory = async (req, res) => {
     await Category.deleteOne({ title: title }).exec();
     return res.sendStatus(204);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error deleting a category: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

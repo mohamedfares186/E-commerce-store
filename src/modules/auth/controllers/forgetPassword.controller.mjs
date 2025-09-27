@@ -2,6 +2,7 @@ import User from "../../users/models/users.model.mjs";
 import { generateTokens } from "../../../utils/generateTokens.mjs";
 import sendEmail from "../../../utils/sendEmails.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 const forgetPassword = async (req, res) => {
   try {
@@ -33,8 +34,8 @@ const forgetPassword = async (req, res) => {
       .status(200)
       .json({ message: "Password reset link sent to your email" });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error forget user: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

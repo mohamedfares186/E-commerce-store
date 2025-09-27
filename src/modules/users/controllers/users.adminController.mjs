@@ -1,5 +1,6 @@
 import User from "../models/users.model.mjs";
 import sanitize from "../../../utils/sanitize.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // Admin Access
 const findAllUsers = async (req, res) => {
@@ -8,8 +9,8 @@ const findAllUsers = async (req, res) => {
     if (!users) return res.status(404).json({ Error: "No users Found" });
     return res.status(200).json(users);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving all users: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -24,8 +25,8 @@ const findAdminProfile = async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving admin profile: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -42,8 +43,8 @@ const findUserByIdAdmin = async (req, res) => {
     if (!user) return res.status(404).json({ Error: "User Not Found" });
     return res.status(200).json(user);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error admin finding a user by ID: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -58,16 +59,16 @@ const deleteUser = async (req, res) => {
     const sanitizedUsername = sanitize(username);
 
     if (!sanitizedUsername)
-      return res.status(400).json({ Error: "Please enter a valid username" }); // Bad Request
+      return res.status(400).json({ Error: "Please enter a valid username" });
 
     const user = await User.findOne({ username: sanitizedUsername });
-    if (!user) return res.status(404).json({ Error: "User Not Found" }); // Not Found
+    if (!user) return res.status(404).json({ Error: "User Not Found" });
 
     await User.deleteOne({ username: user.username }).exec();
-    return res.sendStatus(204); // No Content
+    return res.sendStatus(204);
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error deleting a user: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

@@ -1,4 +1,5 @@
 import Product from "../models/products.model.mjs";
+import { logger } from "../../../middleware/logger.mjs";
 
 // User and guest Access
 const retrieveAllProducts = async (req, res) => {
@@ -14,8 +15,8 @@ const retrieveAllProducts = async (req, res) => {
       count: products.length,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving all products: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -41,8 +42,8 @@ const retrieveProductsByCategory = async (req, res) => {
       count: findProducts.length,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving products by category: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 
@@ -60,8 +61,8 @@ const retrieveProductById = async (req, res) => {
       data: findProduct,
     });
   } catch (error) {
-    console.error(error);
-    return res.sendStatus(500);
+    logger.error("Error retrieving a product by ID: ", error.message);
+    return res.status(500).json({ error: "Internal server error" });
   }
 };
 

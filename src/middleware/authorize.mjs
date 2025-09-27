@@ -1,19 +1,24 @@
-import jwt from "jsonwebtoken";
-import env from "../config/env.mjs";
+import { logger } from "./logger.mjs";
 
 const authorize =
   (...allowedRoles) =>
   (req, res, next) => {
-    const token = req.cookies.accessToken;
-    if (!token) return res.sendStatus(401);
-    jwt.verify(token, env.accessTokenSecret, (err, decoded) => {
-      if (err) return res.status(403).json({ Error: "Access Denied" });
-      const role = decoded.role;
-      if (!allowedRoles.includes(role))
-        return res.status(403).json({ Error: "Access Denied" });
-      req.user = decoded;
-      next();
-    });
+    const user = req.user;
+    if (!user) return res.status(401).json({ Error: "Unauthorized" });
+
+    const role = user.role;
+    if (!allowedRoles.includes(role)) {
+      logger.warn("Role access denied:", {
+        userId: user.userId,
+        role: user.role,
+        requiredRoles: allowedRoles,
+        userAgent: req.headers["user-agent"],
+        ip: req.ip,
+      });
+      return res.status(403).json({ error: "Forbidden" });
+    }
+
+    next();
   };
 
 export default authorize;
